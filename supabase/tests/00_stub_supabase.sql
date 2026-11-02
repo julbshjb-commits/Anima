@@ -33,3 +33,6 @@ create function storage.foldername(name text) returns text[] language sql immuta
 $$;
 grant usage on schema storage to anon, authenticated;
 grant select, insert, delete on storage.objects to authenticated;
+
+-- Publication temps réel (créée par Supabase en production).
+create publication supabase_realtime;

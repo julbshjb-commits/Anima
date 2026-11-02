@@ -123,5 +123,40 @@ select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
 select leave_journal('aaaaaaaa-0000-0000-0000-000000000001');
 select pg_temp.check((select count(*) from journals) = 0, 'après départ, Léa ne voit plus le journal');
 
+-- Création depuis l'appli : INSERT ... RETURNING doit renvoyer le journal créé
+reset role;
+select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
+do $$ declare v uuid; begin
+  insert into journals (owner_id, title, kind) values (auth.uid(), 'Carnet d''Ève', 'amis') returning id into v;
+  if v is null then raise exception 'ÉCHEC : RETURNING vide à la création'; end if;
+  if not public.is_journal_member(v) then raise exception 'ÉCHEC : la créatrice n''est pas membre'; end if;
+  raise notice 'ok  la créatrice récupère son journal et en devient membre';
+end $$;
+
+-- Changer de propriétaire à la main reste interdit
+reset role;
+select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
+do $$ begin
+  update journals set owner_id = '11111111-1111-1111-1111-111111111111' where title = 'Carnet d''Ève';
+  raise exception 'ÉCHEC : changement de propriétaire accepté';
+exception when insufficient_privilege then raise notice 'ok  impossible de changer le propriétaire à la main';
+end $$;
+
+-- Suppression de compte : le journal partagé est transmis au membre suivant
+reset role;
+insert into journal_members (journal_id, user_id, role)
+  select id, '11111111-1111-1111-1111-111111111111', 'editor' from journals where title = 'Carnet d''Ève';
+select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
+select prepare_account_deletion();
+reset role;
+delete from auth.users where id = '33333333-3333-3333-3333-333333333333';
+select pg_temp.check(
+  (select owner_id from journals where title = 'Carnet d''Ève') = '11111111-1111-1111-1111-111111111111',
+  'après suppression du compte d''Ève, Nassim hérite du carnet partagé');
+select pg_temp.check(
+  (select role from journal_members m join journals j on j.id = m.journal_id
+   where j.title = 'Carnet d''Ève' and m.user_id = '11111111-1111-1111-1111-111111111111') = 'owner',
+  'Nassim devient propriétaire dans la liste des membres');
+
 reset role;
 \echo 'Tous les tests de règles d''accès passent.'

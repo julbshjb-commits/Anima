@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/* Design system Anima : couleurs de base, polices, et thème sombre. */
+@theme {
+  --color-noir: #151515;
+  --color-anthracite: #292826;
+  --color-gris: #65615b;
+  --color-sable: #c8b99f;
+  --color-casse: #f5f3ee;
+  --color-ivoire: #e8e1d6;
+  --color-papier: #fbfaf7;
+  --color-lin: #efebe3;
+  --color-terre: #b4654a;
+  --color-sauge: #9db09a;
+
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
+}
+
+:root {
+  --fond: var(--color-casse);
+  --surface: var(--color-papier);
+  --surface-2: var(--color-lin);
+  --texte: var(--color-noir);
+  --texte-doux: var(--color-gris);
+  --trait: rgb(21 21 21 / 0.1);
+  --accent: var(--color-noir);
+  --accent-texte: var(--color-casse);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #121211;
+    --surface: #1c1b1a;
+    --surface-2: var(--color-anthracite);
+    --texte: var(--color-casse);
+    --texte-doux: #a39d93;
+    --trait: rgb(245 243 238 / 0.12);
+    --accent: var(--color-casse);
+    --accent-texte: var(--color-noir);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-fond: var(--fond);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-texte: var(--texte);
+  --color-doux: var(--texte-doux);
+  --color-trait: var(--trait);
+  --color-accent: var(--accent);
+  --color-accent-texte: var(--accent-texte);
+}
+
+body {
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.titre {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.surtitre {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--texte-doux);
+}

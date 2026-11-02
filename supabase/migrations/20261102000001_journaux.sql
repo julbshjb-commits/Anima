@@ -479,8 +479,10 @@ create policy profiles_update on public.profiles for update to authenticated
 
 -- Journaux : visibles par les membres ; créés pour soi ; modifiés et
 -- supprimés par le propriétaire uniquement.
+-- owner_id = auth.uid() : nécessaire pour INSERT ... RETURNING, car le trigger
+-- qui ajoute le propriétaire comme membre s'exécute après le contrôle RLS du RETURNING.
 create policy journals_select on public.journals for select to authenticated
-  using (public.is_journal_member(id));
+  using (owner_id = auth.uid() or public.is_journal_member(id));
 create policy journals_insert on public.journals for insert to authenticated
   with check (owner_id = auth.uid());
 create policy journals_update on public.journals for update to authenticated
