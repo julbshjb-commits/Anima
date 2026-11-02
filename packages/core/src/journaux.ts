@@ -80,3 +80,6 @@ export const entrySchema = z.object({
   mood: z.enum(MOODS).nullable().optional().default(null),
 });
 export type EntryInput = z.infer<typeof entrySchema>;
+
+export const entryUpdateSchema = entrySchema.extend({ entryId: z.uuid() });
+export type EntryUpdateInput = z.infer<typeof entryUpdateSchema>;

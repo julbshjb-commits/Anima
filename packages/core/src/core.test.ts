@@ -52,3 +52,11 @@ describe("textToDoc", () => {
     expect(doc.content[1]?.content[0]?.text).toBe("À demain");
   });
 });
+
+describe("photoPath", () => {
+  it("range la photo dans le dossier du journal puis de l'entrée", async () => {
+    const { photoPath } = await import("./photos");
+    expect(photoPath("j1", "e1", "f1", "image/png")).toBe("j1/e1/f1.png");
+    expect(photoPath("j1", "e1", "f1", "image/inconnu")).toBe("j1/e1/f1.jpg");
+  });
+});

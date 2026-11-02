@@ -136,10 +136,20 @@ export default function JournalScreen() {
               <Card key={e.id} style={{ gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <MoodDot mood={e.mood} />
-                  <Overline>
-                    {formatLongDate(e.entry_date)}
-                    {!isIntime && authorName(e.author_id) ? ` · ${authorName(e.author_id)}` : ''}
-                  </Overline>
+                  <View style={{ flex: 1 }}>
+                    <Overline>
+                      {formatLongDate(e.entry_date)}
+                      {!isIntime && authorName(e.author_id) ? ` · ${authorName(e.author_id)}` : ''}
+                    </Overline>
+                  </View>
+                  {canWrite && e.author_id === userId ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      hitSlop={10}
+                      onPress={() => router.push({ pathname: '/journal/[id]/ecrire', params: { id, entryId: e.id } })}>
+                      <Text style={{ fontFamily: fonts.texteMoyen, fontSize: 13, color: c.doux }}>Modifier</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
                 {e.title ? <Title size={26}>{e.title}</Title> : null}
                 <Body style={{ fontSize: 16, lineHeight: 25 }}>{e.content_text}</Body>

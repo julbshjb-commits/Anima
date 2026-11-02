@@ -63,7 +63,7 @@ export async function getJournal(id: string) {
   return { supabase, user, journal: journal as Journal, members: list, myRole };
 }
 
-export type EntryWithPhotos = JournalEntry & { photos: { id: string; url: string }[] };
+export type EntryWithPhotos = JournalEntry & { photos: { id: string; url: string; path: string }[] };
 
 /** Entrées d'un mois, avec des liens signés de courte durée pour les photos (bucket privé). */
 export async function getMonthEntries(journalId: string, from: string, to: string): Promise<EntryWithPhotos[]> {
@@ -78,7 +78,27 @@ export async function getMonthEntries(journalId: string, from: string, to: strin
     .order("entry_date", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
-  if (!entries?.length) return [];
+  return withPhotos(supabase, entries ?? []);
+}
+
+/** Une entrée précise (pour la modifier), ou null si elle n'est pas visible. */
+export async function getEntry(journalId: string, entryId: string): Promise<EntryWithPhotos | null> {
+  const { supabase } = await requireUser();
+  if (!/^[0-9a-f-]{36}$/i.test(entryId)) return null;
+  const { data } = await supabase
+    .from("journal_entries")
+    .select("*")
+    .eq("id", entryId)
+    .eq("journal_id", journalId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  return data ? ((await withPhotos(supabase, [data]))[0] ?? null) : null;
+}
+
+type Client = Awaited<ReturnType<typeof requireUser>>["supabase"];
+
+async function withPhotos(supabase: Client, entries: JournalEntry[]): Promise<EntryWithPhotos[]> {
+  if (!entries.length) return [];
 
   const { data: atts } = await supabase
     .from("attachments")
@@ -92,6 +112,6 @@ export async function getMonthEntries(journalId: string, from: string, to: strin
     ...e,
     photos: (atts ?? [])
       .filter((a) => a.entry_id === e.id && urlByPath.get(a.storage_path))
-      .map((a) => ({ id: a.id, url: urlByPath.get(a.storage_path)! })),
+      .map((a) => ({ id: a.id, url: urlByPath.get(a.storage_path)!, path: a.storage_path })),
   }));
 }

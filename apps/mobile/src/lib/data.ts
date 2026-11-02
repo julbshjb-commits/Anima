@@ -5,7 +5,9 @@
  */
 import {
   entrySchema,
+  entryUpdateSchema,
   isValidInviteCode,
+  photoPath,
   normalizeInviteCode,
   textToDoc,
   type Journal,
@@ -64,7 +66,7 @@ export async function getJournal(id: string, userId: string) {
   return { journal: journal as Journal, members: list, myRole };
 }
 
-export type EntryWithPhotos = JournalEntry & { photos: { id: string; url: string }[] };
+export type EntryWithPhotos = JournalEntry & { photos: { id: string; url: string; path: string }[] };
 
 /** Entrées d'un mois, avec des liens signés d'une heure pour les photos (stockage privé). */
 export async function getMonthEntries(journalId: string, from: string, to: string): Promise<EntryWithPhotos[]> {
@@ -79,8 +81,25 @@ export async function getMonthEntries(journalId: string, from: string, to: strin
     .order('entry_date', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw error;
-  if (!entries?.length) return [];
+  return withPhotos(entries ?? []);
+}
 
+/** Une entrée précise (pour la modifier), ou null si elle n'est pas visible. */
+export async function getEntry(journalId: string, entryId: string): Promise<EntryWithPhotos | null> {
+  const { data, error } = await requireClient()
+    .from('journal_entries')
+    .select('*')
+    .eq('id', entryId)
+    .eq('journal_id', journalId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? ((await withPhotos([data]))[0] ?? null) : null;
+}
+
+async function withPhotos(entries: JournalEntry[]): Promise<EntryWithPhotos[]> {
+  if (!entries.length) return [];
+  const supabase = requireClient();
   const { data: atts } = await supabase.from('attachments').select('id, entry_id, storage_path').in('entry_id', entries.map((e) => e.id));
   const paths = (atts ?? []).map((a) => a.storage_path);
   const signed = paths.length ? ((await supabase.storage.from('attachments').createSignedUrls(paths, 60 * 60)).data ?? []) : [];
@@ -90,7 +109,7 @@ export async function getMonthEntries(journalId: string, from: string, to: strin
     ...e,
     photos: (atts ?? [])
       .filter((a) => a.entry_id === e.id && urlByPath.get(a.storage_path))
-      .map((a) => ({ id: a.id, url: urlByPath.get(a.storage_path)! })),
+      .map((a) => ({ id: a.id, url: urlByPath.get(a.storage_path)!, path: a.storage_path })),
   }));
 }
 
@@ -116,9 +135,7 @@ export async function createSharedJournal(userId: string, input: { title: string
 }
 
 export type Photo = { uri: string; mimeType: string; size: number };
-export const PHOTO_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
-export const MAX_PHOTOS = 4;
-export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+type EntryFields = { journalId: string; entryDate: string; title: string; contentText: string; mood: string | null };
 
 /**
  * Crée l'entrée puis envoie les photos dans le stockage privé.
@@ -127,7 +144,7 @@ export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
  */
 export async function createEntry(
   userId: string,
-  input: { journalId: string; entryDate: string; title: string; contentText: string; mood: string | null },
+  input: EntryFields,
   photos: Photo[],
   onStep: (step: string) => void,
 ): Promise<{ failedPhotos: number }> {
@@ -152,18 +169,78 @@ export async function createEntry(
     .single();
   if (error || !entry) throw new Error('L’entrée n’a pas pu être enregistrée. Réessaie.');
 
-  let failedPhotos = 0;
+  return { failedPhotos: await uploadPhotos(userId, e.journalId, entry.id, photos, onStep) };
+}
+
+/**
+ * Modifie une entrée, retire les photos demandées puis envoie les nouvelles.
+ * La RLS n'autorise que l'auteur, et seulement s'il peut encore écrire.
+ */
+export async function updateEntry(
+  userId: string,
+  input: EntryFields & { entryId: string },
+  removePhotoIds: string[],
+  photos: Photo[],
+  onStep: (step: string) => void,
+): Promise<{ failedPhotos: number }> {
+  const parsed = entryUpdateSchema.safeParse(input);
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Entrée incomplète.');
+  const e = parsed.data;
+
+  onStep('Enregistrement…');
+  const { data: entry, error } = await requireClient()
+    .from('journal_entries')
+    .update({
+      entry_date: e.entryDate,
+      title: e.title || null,
+      content: textToDoc(e.contentText),
+      content_text: e.contentText,
+      mood: e.mood,
+    })
+    .eq('id', e.entryId)
+    .eq('journal_id', e.journalId)
+    .eq('author_id', userId)
+    .select('id')
+    .maybeSingle();
+  if (error || !entry) throw new Error('L’entrée n’a pas pu être modifiée. Réessaie.');
+
+  if (removePhotoIds.length) await removePhotos(userId, e.entryId, removePhotoIds);
+  return { failedPhotos: await uploadPhotos(userId, e.journalId, e.entryId, photos, onStep) };
+}
+
+/** Supprime vraiment l'entrée et ses photos (pas de corbeille). */
+export async function deleteEntry(userId: string, entryId: string) {
+  // Les fichiers d'abord : une fois la ligne supprimée, on perdrait leur trace.
+  await removePhotos(userId, entryId);
+  const { error } = await requireClient().from('journal_entries').delete().eq('id', entryId).eq('author_id', userId);
+  if (error) throw new Error('L’entrée n’a pas pu être supprimée. Réessaie.');
+}
+
+async function removePhotos(userId: string, entryId: string, ids?: string[]) {
+  const supabase = requireClient();
+  let q = supabase.from('attachments').select('id, storage_path').eq('entry_id', entryId).eq('owner_id', userId);
+  if (ids) q = q.in('id', ids);
+  const { data: atts } = await q;
+  if (!atts?.length) return;
+  await supabase.storage.from('attachments').remove(atts.map((a) => a.storage_path));
+  await supabase.from('attachments').delete().in('id', atts.map((a) => a.id));
+}
+
+/** Envoie les photos dans le stockage privé ; renvoie le nombre d'échecs. */
+async function uploadPhotos(userId: string, journalId: string, entryId: string, photos: Photo[], onStep: (step: string) => void) {
+  const supabase = requireClient();
+  let failed = 0;
   for (const [i, p] of photos.entries()) {
     onStep(`Envoi de la photo ${i + 1} sur ${photos.length}…`);
-    const path = `${e.journalId}/${entry.id}/${randomUUID()}.${PHOTO_TYPES[p.mimeType] ?? 'jpg'}`;
+    const path = photoPath(journalId, entryId, randomUUID(), p.mimeType);
     try {
       const body = await (await fetch(p.uri)).arrayBuffer();
       const up = await supabase.storage.from('attachments').upload(path, body, { contentType: p.mimeType });
       if (up.error) throw up.error;
       const { error: attErr } = await supabase.from('attachments').insert({
         owner_id: userId,
-        journal_id: e.journalId,
-        entry_id: entry.id,
+        journal_id: journalId,
+        entry_id: entryId,
         storage_path: path,
         mime_type: p.mimeType,
         size_bytes: body.byteLength,
@@ -173,10 +250,10 @@ export async function createEntry(
         throw attErr;
       }
     } catch {
-      failedPhotos++;
+      failed++;
     }
   }
-  return { failedPhotos };
+  return failed;
 }
 
 /** Code d'invitation (haché en base, montré une seule fois en clair). */

@@ -1,17 +1,17 @@
-import { formatLongDate, MOOD_META, MOODS, parseIsoDate, toIsoDate, type Mood } from '@anima/core';
+import { formatLongDate, MAX_PHOTO_BYTES, MAX_PHOTOS, MOOD_META, MOODS, PHOTO_TYPES, parseIsoDate, toIsoDate, type Mood } from '@anima/core';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { Body, Button, ErrorText, Overline } from '@/components/ui';
+import { Body, Button, ErrorText, Loading, Overline } from '@/components/ui';
 import { useUserId } from '@/lib/auth';
-import { createEntry, MAX_PHOTO_BYTES, MAX_PHOTOS, PHOTO_TYPES, type Photo } from '@/lib/data';
+import { createEntry, deleteEntry, getEntry, updateEntry, type EntryWithPhotos, type Photo } from '@/lib/data';
 import { fonts, useColors } from '@/theme';
 
 export default function Ecrire() {
-  const { id, date: initialDate } = useLocalSearchParams<{ id: string; date?: string }>();
+  const { id, date: initialDate, entryId } = useLocalSearchParams<{ id: string; date?: string; entryId?: string }>();
   const userId = useUserId();
   const router = useRouter();
   const c = useColors();
@@ -22,6 +22,26 @@ export default function Ecrire() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState<string>();
   const [step, setStep] = useState<string>();
+  // Mode modification : l'entrée existante et les photos à retirer.
+  const [existing, setExisting] = useState<EntryWithPhotos | null>();
+  const [removeIds, setRemoveIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!entryId) return;
+    getEntry(id, entryId)
+      .then((e) => {
+        setExisting(e && e.author_id === userId ? e : null);
+        if (e) {
+          setDate(e.entry_date);
+          setMood(e.mood);
+          setTitle(e.title ?? '');
+          setText(e.content_text);
+        }
+      })
+      .catch(() => setExisting(null));
+  }, [id, entryId, userId]);
+
+  const keptPhotos = existing ? existing.photos.filter((p) => !removeIds.includes(p.id)).length : 0;
 
   function shiftDay(delta: number) {
     const d = parseIsoDate(date);
@@ -30,7 +50,7 @@ export default function Ecrire() {
   }
 
   async function pickPhotos() {
-    const left = MAX_PHOTOS - photos.length;
+    const left = MAX_PHOTOS - keptPhotos - photos.length;
     if (left <= 0) return setError(`${MAX_PHOTOS} photos maximum par entrée.`);
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -53,7 +73,10 @@ export default function Ecrire() {
   async function save() {
     setError(undefined);
     try {
-      const { failedPhotos } = await createEntry(userId, { journalId: id, entryDate: date, title, contentText: text, mood }, photos, setStep);
+      const fields = { journalId: id, entryDate: date, title, contentText: text, mood };
+      const { failedPhotos } = existing
+        ? await updateEntry(userId, { ...fields, entryId: existing.id }, removeIds, photos, setStep)
+        : await createEntry(userId, fields, photos, setStep);
       if (failedPhotos) {
         Alert.alert('Entrée enregistrée', `${failedPhotos} photo(s) n’ont pas pu être envoyées. Tu pourras réessayer plus tard.`);
       }
@@ -65,8 +88,40 @@ export default function Ecrire() {
     }
   }
 
+  function confirmDelete() {
+    if (!existing) return;
+    Alert.alert('Supprimer cette entrée ?', 'Elle disparaîtra définitivement, avec ses photos.', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          setStep('Suppression…');
+          try {
+            await deleteEntry(userId, existing.id);
+            router.back();
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'L’entrée n’a pas pu être supprimée.');
+          } finally {
+            setStep(undefined);
+          }
+        },
+      },
+    ]);
+  }
+
+  if (entryId && existing === undefined) return <Loading />;
+  if (entryId && existing === null) {
+    return (
+      <View style={{ flex: 1, padding: 24, backgroundColor: c.fond }}>
+        <Body soft>Cette entrée n’existe plus, ou tu n’en es pas l’auteur.</Body>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.fond }}>
+      {existing ? <Stack.Screen options={{ title: 'Modifier' }} /> : null}
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 22, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <DayArrow label="Jour précédent" glyph="‹" onPress={() => shiftDay(-1)} />
@@ -138,26 +193,43 @@ export default function Ecrire() {
         />
 
         <View style={{ gap: 10 }}>
-          <Overline>{`Photos (${photos.length}/${MAX_PHOTOS})`}</Overline>
-          {photos.length ? (
+          <Overline>{`Photos (${keptPhotos + photos.length}/${MAX_PHOTOS})`}</Overline>
+          {existing?.photos.length || photos.length ? (
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              {existing?.photos.map((p, i) => {
+                const removed = removeIds.includes(p.id);
+                return (
+                  <Pressable
+                    key={p.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={removed ? `Garder la photo ${i + 1}` : `Retirer la photo ${i + 1}`}
+                    onPress={() => setRemoveIds((ids) => (removed ? ids.filter((x) => x !== p.id) : [...ids, p.id]))}>
+                    <Image source={{ uri: p.url }} style={{ width: 76, height: 76, borderRadius: 10, opacity: removed ? 0.25 : 1 }} contentFit="cover" />
+                  </Pressable>
+                );
+              })}
               {photos.map((p, i) => (
                 <Pressable
                   key={p.uri}
                   accessibilityRole="button"
-                  accessibilityLabel={`Retirer la photo ${i + 1}`}
+                  accessibilityLabel={`Retirer la nouvelle photo ${i + 1}`}
                   onPress={() => setPhotos((all) => all.filter((x) => x.uri !== p.uri))}>
                   <Image source={{ uri: p.uri }} style={{ width: 76, height: 76, borderRadius: 10 }} contentFit="cover" />
                 </Pressable>
               ))}
             </View>
           ) : null}
-          {photos.length ? <Body soft style={{ fontSize: 13 }}>Touche une photo pour la retirer.</Body> : null}
-          {photos.length < MAX_PHOTOS ? <Button label="Ajouter des photos" ghost onPress={pickPhotos} disabled={!!step} /> : null}
+          {existing?.photos.length || photos.length ? (
+            <Body soft style={{ fontSize: 13 }}>
+              {existing?.photos.length ? 'Touche une photo pour la retirer ou la garder.' : 'Touche une photo pour la retirer.'}
+            </Body>
+          ) : null}
+          {keptPhotos + photos.length < MAX_PHOTOS ? <Button label="Ajouter des photos" ghost onPress={pickPhotos} disabled={!!step} /> : null}
         </View>
 
         <ErrorText>{error}</ErrorText>
-        <Button label={step ?? 'Enregistrer l’entrée'} onPress={save} busy={!!step} />
+        <Button label={step ?? (existing ? 'Enregistrer les modifications' : 'Enregistrer l’entrée')} onPress={save} busy={!!step} />
+        {existing ? <Button label="Supprimer cette entrée" ghost onPress={confirmDelete} disabled={!!step} /> : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
