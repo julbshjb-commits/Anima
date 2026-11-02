@@ -1,20 +1,9 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { entrySchema } from "@anima/core";
+import { entrySchema, textToDoc } from "@anima/core";
 import { requireUser } from "@/lib/auth";
 
 export type CreateEntryResult = { error: string } | { entryId: string };
-
-/** Le texte devient un document Tiptap minimal, prêt pour l'éditeur riche. */
-function toDoc(text: string) {
-  return {
-    type: "doc",
-    content: text.split(/\n{2,}/).map((p) => ({
-      type: "paragraph",
-      content: p ? [{ type: "text", text: p }] : [],
-    })),
-  };
-}
 
 /**
  * Crée l'entrée. Les photos sont ensuite envoyées directement du navigateur
@@ -40,7 +29,7 @@ export async function createEntry(input: {
       author_id: user.id,
       entry_date: e.entryDate,
       title: e.title || null,
-      content: toDoc(e.contentText),
+      content: textToDoc(e.contentText),
       content_text: e.contentText,
       mood: e.mood,
     })

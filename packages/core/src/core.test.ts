@@ -43,3 +43,12 @@ describe("dates", () => {
     expect(g.length % 7).toBe(0);
   });
 });
+
+describe("textToDoc", () => {
+  it("découpe en paragraphes sur les lignes vides", async () => {
+    const { textToDoc } = await import("./contenu");
+    const doc = textToDoc("Bonjour\n\nÀ demain");
+    expect(doc.content).toHaveLength(2);
+    expect(doc.content[1]?.content[0]?.text).toBe("À demain");
+  });
+});
