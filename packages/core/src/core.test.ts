@@ -1,0 +1,45 @@
+import { describe, expect, it } from "vitest";
+import {
+  createJournalSchema, entrySchema, formatInviteCode, isValidInviteCode,
+  monthGrid, normalizeInviteCode, toIsoDate,
+} from "./index";
+
+describe("codes d'invitation", () => {
+  it("normalise la saisie", () => {
+    expect(normalizeInviteCode(" k7m-q2p ")).toBe("K7MQ2P");
+  });
+  it("refuse les caractères ambigus et les mauvaises longueurs", () => {
+    expect(isValidInviteCode("K7MQ2P")).toBe(true);
+    expect(isValidInviteCode("K7MQ0P")).toBe(false);
+    expect(isValidInviteCode("K7MQ2")).toBe(false);
+  });
+  it("formate en deux groupes", () => {
+    expect(formatInviteCode("k7mq2p")).toBe("K7M-Q2P");
+  });
+});
+
+describe("schémas", () => {
+  it("refuse de créer un journal intime depuis le formulaire partagé", () => {
+    const r = createJournalSchema.safeParse({ title: "Moi", kind: "intime", cover: "nuit-encre" });
+    expect(r.success).toBe(false);
+  });
+  it("accepte une entrée simple", () => {
+    const r = entrySchema.parse({
+      journalId: "11111111-1111-4111-8111-111111111111",
+      entryDate: "2026-11-02",
+      contentText: "Une belle journée.",
+    });
+    expect(r.mood).toBeNull();
+  });
+});
+
+describe("dates", () => {
+  it("garde la date locale", () => {
+    expect(toIsoDate(new Date(2026, 0, 18, 23, 30))).toBe("2026-01-18");
+  });
+  it("commence la grille le lundi", () => {
+    const g = monthGrid(2026, 10); // novembre 2026 : le 1er est un dimanche
+    expect(g.slice(0, 7)).toEqual([null, null, null, null, null, null, "2026-11-01"]);
+    expect(g.length % 7).toBe(0);
+  });
+});
