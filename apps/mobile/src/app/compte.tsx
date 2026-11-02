@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { Body, Button, Card, ErrorText, Field, Overline, Screen, Title } from '@/components/ui';
 import { useAuth, useUserId } from '@/lib/auth';
 import { updateDisplayName } from '@/lib/data';
 import { requireClient } from '@/lib/supabase';
 
-/** Adresse du site web, quand il sera en ligne (export et suppression du compte s'y font pour l'instant). */
+/** Adresse du site web, quand il sera en ligne (l'export des données s'y fait pour l'instant). */
 const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL;
 
 export default function Compte() {
@@ -28,6 +28,37 @@ export default function Compte() {
       .maybeSingle()
       .then(({ data }) => setName(data?.display_name ?? ''));
   }, [userId]);
+
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string>();
+
+  /**
+   * Suppression définitive (fonction serveur supprimer-compte) : les journaux
+   * partagés sont transmis aux autres membres, tout le reste est effacé.
+   */
+  function askDelete() {
+    if (confirmText.trim() !== 'SUPPRIMER') return setDeleteError('Écris SUPPRIMER pour confirmer.');
+    Alert.alert('Supprimer ton compte ?', 'Ton journal intime, tes entrées et tes photos seront effacés définitivement.', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          setDeleting(true);
+          setDeleteError(undefined);
+          const client = requireClient();
+          const { error: fnErr } = await client.functions.invoke('supprimer-compte', { body: { confirm: 'SUPPRIMER' } });
+          if (fnErr) {
+            setDeleting(false);
+            return setDeleteError('La suppression a échoué. Rien n’a été effacé, réessaie plus tard.');
+          }
+          // La session n'est plus valable : on la retire seulement de l'appareil.
+          await client.auth.signOut({ scope: 'local' });
+        },
+      },
+    ]);
+  }
 
   async function save() {
     setBusy(true);
@@ -58,8 +89,8 @@ export default function Compte() {
       {SITE_URL ? (
         <View style={{ gap: 10 }}>
           <Overline>Tes données</Overline>
-          <Body soft>L’export de tes données et la suppression du compte se font sur le site, avec la même adresse e-mail.</Body>
-          <Button label="Ouvrir mon compte sur le site" ghost onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/compte`)} />
+          <Body soft>L’export de toutes tes données se fait sur le site, avec la même adresse e-mail.</Body>
+          <Button label="Exporter mes données sur le site" ghost onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/compte`)} />
         </View>
       ) : null}
 
@@ -71,6 +102,17 @@ export default function Compte() {
           router.replace('/connexion');
         }}
       />
+
+      <Card style={{ gap: 12 }}>
+        <Overline>Supprimer mon compte</Overline>
+        <Body soft>
+          Ton journal intime, tes entrées et tes photos sont effacés définitivement. Les journaux partagés que tu as créés sont confiés au
+          membre le plus ancien, pour que les autres gardent leurs souvenirs.
+        </Body>
+        <Field label="Écris SUPPRIMER pour confirmer" value={confirmText} onChangeText={setConfirmText} autoCapitalize="characters" autoCorrect={false} />
+        <ErrorText>{deleteError}</ErrorText>
+        <Button label="Supprimer définitivement" ghost onPress={askDelete} busy={deleting} />
+      </Card>
     </Screen>
   );
 }

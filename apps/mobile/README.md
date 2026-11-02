@@ -9,12 +9,13 @@ Appli Expo (SDK 58, expo-router). Même base Supabase et mêmes règles d'accès
 - Calendrier du mois coloré par humeur, entrées avec photos, mise à jour en temps réel.
 - Écrire une entrée : date, humeur, titre, texte, jusqu'à 4 photos (10 Mo chacune) envoyées dans le stockage privé.
 - Créer un journal partagé, générer un code d'invitation (48 h) et l'envoyer, rejoindre avec un code.
-- Compte : prénom affiché, déconnexion.
+- Modifier ou supprimer une entrée (par son auteur seulement).
+- Compte : prénom affiché, déconnexion, **suppression du compte** (fonction serveur `supabase/functions/supprimer-compte`, à déployer sur Supabase).
 
 ## Pas encore dans l'appli
 
-- Export des données et suppression du compte : sur le site web pour l'instant (bouton affiché seulement si `EXPO_PUBLIC_SITE_URL` est rempli). **À faire avant la soumission à l'App Store**, qui exige la suppression depuis l'appli : une Edge Function qui appelle `prepare_account_deletion` puis supprime l'utilisateur côté serveur.
-- Modifier ou supprimer une entrée, éditeur riche (Tiptap), notifications.
+- Export des données : sur le site web pour l'instant (bouton affiché seulement si `EXPO_PUBLIC_SITE_URL` est rempli).
+- Éditeur riche (Tiptap), notifications.
 
 ## Réglage Supabase obligatoire
 

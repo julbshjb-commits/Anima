@@ -9,6 +9,7 @@ Journal intime et journaux partagés. Privé par défaut, hébergé en Europe.
 - `packages/core` : types de la base, humeurs, couvertures, codes d'invitation, dates, partagés par le web et le mobile.
 - `supabase/migrations` : schéma de la base et règles d'accès (RLS).
 - `supabase/tests` : tests des règles d'accès, lancés sur un Postgres local.
+- `supabase/functions` : fonctions serveur (Deno). `supprimer-compte` supprime le compte depuis l'appli mobile.
 - `docs/adr` : décisions d'architecture.
 
 ## Lancer

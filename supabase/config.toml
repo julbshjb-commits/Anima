@@ -1,0 +1,7 @@
+# Réglages Supabase versionnés. Le projet en ligne est hcnxhukbdnapnrohelcd (Francfort).
+project_id = "anima"
+
+# La fonction vérifie elle-même la session (getUser) : la vérification
+# automatique de la passerelle ne comprend pas les nouvelles clés d'API.
+[functions.supprimer-compte]
+verify_jwt = false
