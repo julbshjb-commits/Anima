@@ -59,6 +59,7 @@ export async function publish(
     eventPlace: form.get("eventPlace") ?? "",
     quoteText: form.get("quoteText") ?? "",
     quoteSource: form.get("quoteSource") ?? "",
+    hasFile: !!uuid(form.get("fileId")),
   });
   if (!parsed.success)
     return {
@@ -66,7 +67,7 @@ export async function publish(
     };
   const { error } = await supabase
     .from("circle_posts")
-    .insert({ circle_id: circleId, ...parsed.data });
+    .insert({ circle_id: circleId, ...parsed.data, file_id: uuid(form.get("fileId")) });
   if (error)
     return { error: "La publication n'a pas pu être envoyée. Réessaie." };
   return ok();
@@ -195,4 +196,26 @@ export async function deleteCircle(form: FormData) {
     await supabase.from("circles").delete().eq("id", id);
   revalidatePath("/cercles");
   redirect("/cercles");
+}
+
+/** « Enregistrer dans ma bibliothèque » : copie la citation d'une publication dans mes citations. */
+export async function saveQuoteFromPost(
+  _: CercleState,
+  form: FormData,
+): Promise<CercleState> {
+  const { supabase } = await requireUser();
+  const postId = uuid(form.get("postId"));
+  if (!postId) return { error: "Publication introuvable." };
+  const { data: post } = await supabase
+    .from("circle_posts")
+    .select("quote_text, quote_source")
+    .eq("id", postId)
+    .maybeSingle();
+  if (!post?.quote_text) return { error: "Citation introuvable." };
+  const { error } = await supabase
+    .from("quotes")
+    .insert({ text: post.quote_text, source: post.quote_source });
+  if (error) return { error: "La citation n'a pas pu être gardée." };
+  revalidatePath("/bibliotheque");
+  return { ok: Date.now() };
 }

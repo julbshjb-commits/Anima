@@ -3,12 +3,14 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MOODS, MOOD_META, formatInviteCode } from "@anima/core";
 import { browserClient } from "@/lib/supabase/browser";
+import { AttachFile } from "@/components/AttachFile";
 import {
   comment,
   createCircle,
   createCircleInvite,
   markSeen,
   publish,
+  saveQuoteFromPost,
   type CercleState,
 } from "./actions";
 
@@ -37,9 +39,11 @@ type Kind = "mot" | "evenement" | "citation";
 
 /** « Partage quelque chose avec un cercle… » : un mot, un événement ou une citation. */
 export function Composer({
+  userId,
   circles,
   defaultCircle,
 }: {
+  userId: string;
   circles: { id: string; name: string }[];
   defaultCircle?: string;
 }) {
@@ -134,6 +138,7 @@ export function Composer({
           />
         </div>
       )}
+      <AttachFile key={state.ok ?? 0} userId={userId} />
       <div className="flex flex-wrap items-center gap-2">
         <div
           className="flex p-1 rounded-full bg-lin text-[13px]"
@@ -365,4 +370,28 @@ export function LiveCircles({ circleId }: { circleId: string | null }) {
     };
   }, [circleId, router]);
   return null;
+}
+
+export function SaveQuote({ postId }: { postId: string }) {
+  const [state, action, pending] = useActionState<CercleState, FormData>(
+    saveQuoteFromPost,
+    {},
+  );
+  if (state.ok)
+    return (
+      <span className="text-[13px] text-doux">Gardée dans ta bibliothèque</span>
+    );
+  return (
+    <form action={action} className="flex items-center gap-2">
+      <input type="hidden" name="postId" value={postId} />
+      <button
+        type="submit"
+        disabled={pending}
+        className="text-[13px] text-doux hover:text-noir disabled:opacity-50"
+      >
+        Enregistrer dans ma bibliothèque
+      </button>
+      {state.error && <span className="text-xs text-terre">{state.error}</span>}
+    </form>
+  );
 }

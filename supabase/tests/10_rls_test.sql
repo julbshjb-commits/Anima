@@ -385,3 +385,140 @@ delete from auth.users where id = '44444444-4444-4444-4444-444444444444';
 select pg_temp.check((select owner_id from circles where id = 'ffffffff-0000-0000-0000-000000000001') = '22222222-2222-2222-2222-222222222222', 'Léa hérite du cercle');
 reset role;
 \echo 'Tests des Cercles : ok.'
+
+-- ---------------------------------------------------------------------
+-- Bibliothèque : tout est personnel
+-- ---------------------------------------------------------------------
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+insert into works (id, title, creator, status, progress, progress_total) values
+  ('abcdabcd-0000-0000-0000-000000000001', 'Les Années', 'Annie Ernaux', 'en-cours', 158, 254);
+insert into quotes (work_id, text, source) values ('abcdabcd-0000-0000-0000-000000000001', 'Sauver quelque chose du temps où l''on ne sera plus jamais.', 'p. 254');
+insert into reading_goals (year, target) values (2026, 24);
+do $$ begin
+  update works set progress = 300 where id = 'abcdabcd-0000-0000-0000-000000000001';
+  raise exception 'ÉCHEC : page au-delà du total';
+exception when check_violation then raise notice 'ok  la page lue ne dépasse pas le total';
+end $$;
+
+reset role;
+select pg_temp.as_user('55555555-5555-5555-5555-555555555555');
+select pg_temp.check((select count(*) from works) = 0 and (select count(*) from quotes) = 0 and (select count(*) from reading_goals) = 0, 'Maxime ne voit pas la bibliothèque de Léa');
+do $$ begin
+  insert into quotes (work_id, text) values ('abcdabcd-0000-0000-0000-000000000001', 'Intrus');
+  raise exception 'ÉCHEC : citation rattachée à l''œuvre d''autrui';
+exception when insufficient_privilege then raise notice 'ok  impossible de rattacher une citation à l''œuvre d''autrui';
+end $$;
+update works set title = 'Piraté' where id = 'abcdabcd-0000-0000-0000-000000000001';
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+select pg_temp.check((select title from works where id = 'abcdabcd-0000-0000-0000-000000000001') = 'Les Années', 'l''œuvre de Léa est intacte');
+reset role;
+\echo 'Tests de la Bibliothèque : ok.'
+
+-- ---------------------------------------------------------------------
+-- Fichiers : disque privé, lisible seulement là où on l'a joint
+-- ---------------------------------------------------------------------
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+insert into folders (id, name) values ('f0f0f0f0-0000-0000-0000-000000000001', 'Cours');
+insert into storage.objects (bucket_id, name, owner_id) values
+  ('fichiers', '22222222-2222-2222-2222-222222222222/poly.pdf', '22222222-2222-2222-2222-222222222222');
+reset role;
+-- Le stockage renseigne la taille et le type après l'envoi.
+update storage.objects set metadata = '{"size": 2400000, "mimetype": "application/pdf"}'
+  where name = '22222222-2222-2222-2222-222222222222/poly.pdf';
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+insert into files (id, folder_id, name, storage_path, size_bytes, mime_type) values
+  ('f1f1f1f1-0000-0000-0000-000000000001', 'f0f0f0f0-0000-0000-0000-000000000001', 'Polycopié chapitre 4.pdf',
+   '22222222-2222-2222-2222-222222222222/poly.pdf', 1, 'image/png');
+select pg_temp.check((select size_bytes = 2400000 and mime_type = 'application/pdf' from files where id = 'f1f1f1f1-0000-0000-0000-000000000001'),
+  'la taille et le type viennent du stockage, pas du client');
+select pg_temp.check(storage_used_bytes() = 2400000, 'la place occupée est calculée depuis le stockage');
+do $$ begin
+  update files set size_bytes = 1 where id = 'f1f1f1f1-0000-0000-0000-000000000001';
+  raise exception 'ÉCHEC : taille modifiée';
+exception when insufficient_privilege then raise notice 'ok  la taille d''un fichier ne se modifie pas';
+end $$;
+do $$ begin
+  insert into storage.objects (bucket_id, name, owner_id) values
+    ('fichiers', '55555555-5555-5555-5555-555555555555/intrus.pdf', '22222222-2222-2222-2222-222222222222');
+  raise exception 'ÉCHEC : envoi dans le dossier d''autrui';
+exception when insufficient_privilege then raise notice 'ok  impossible d''envoyer un fichier dans le dossier d''autrui';
+end $$;
+
+-- Maxime ne voit rien du disque de Léa
+reset role;
+select pg_temp.as_user('55555555-5555-5555-5555-555555555555');
+select pg_temp.check((select count(*) from files) = 0 and (select count(*) from folders) = 0
+  and (select count(*) from storage.objects where bucket_id = 'fichiers') = 0, 'Maxime ne voit pas le disque de Léa');
+do $$ begin
+  insert into files (name, storage_path) values ('Vol', '22222222-2222-2222-2222-222222222222/poly.pdf');
+  raise exception 'ÉCHEC : fichier d''autrui réclamé';
+exception when insufficient_privilege then raise notice 'ok  impossible de s''approprier le fichier d''autrui';
+end $$;
+insert into storage.objects (bucket_id, name, owner_id) values
+  ('fichiers', '55555555-5555-5555-5555-555555555555/a.pdf', '55555555-5555-5555-5555-555555555555');
+do $$ begin
+  insert into files (folder_id, name, storage_path) values
+    ('f0f0f0f0-0000-0000-0000-000000000001', 'a.pdf', '55555555-5555-5555-5555-555555555555/a.pdf');
+  raise exception 'ÉCHEC : fichier rangé chez autrui';
+exception when insufficient_privilege then raise notice 'ok  impossible de ranger un fichier dans le dossier d''autrui';
+end $$;
+do $$ begin
+  insert into folders (parent_id, name) values ('f0f0f0f0-0000-0000-0000-000000000001', 'Intrus');
+  raise exception 'ÉCHEC : sous-dossier chez autrui';
+exception when insufficient_privilege then raise notice 'ok  impossible de créer un dossier chez autrui';
+end $$;
+
+-- Léa invite Maxime dans son cercle et y partage le polycopié
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+create temp table circle_code2 as select code from create_circle_invite('ffffffff-0000-0000-0000-000000000001');
+grant select on circle_code2 to authenticated;
+insert into circle_posts (id, circle_id, body, file_id) values
+  ('ffffffff-0000-0000-0000-0000000000a2', 'ffffffff-0000-0000-0000-000000000001', '', 'f1f1f1f1-0000-0000-0000-000000000001');
+reset role;
+select pg_temp.as_user('55555555-5555-5555-5555-555555555555');
+select join_with_code((select code from circle_code2));
+select pg_temp.check((select count(*) from files) = 1, 'un membre du cercle voit le fichier partagé');
+select pg_temp.check((select count(*) from storage.objects where name = '22222222-2222-2222-2222-222222222222/poly.pdf') = 1,
+  'un membre du cercle peut télécharger le fichier partagé');
+update files set name = 'Piraté' where id = 'f1f1f1f1-0000-0000-0000-000000000001';
+do $$ begin
+  insert into circle_posts (circle_id, body, file_id) values
+    ('ffffffff-0000-0000-0000-000000000001', 'Regardez', 'f1f1f1f1-0000-0000-0000-000000000001');
+  raise exception 'ÉCHEC : fichier d''autrui republié';
+exception when insufficient_privilege then raise notice 'ok  on ne joint que ses propres fichiers';
+end $$;
+delete from storage.objects where name = '22222222-2222-2222-2222-222222222222/poly.pdf';
+
+-- À la corbeille, le fichier n'est plus partagé
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+select pg_temp.check((select name from files where id = 'f1f1f1f1-0000-0000-0000-000000000001') = 'Polycopié chapitre 4.pdf', 'un membre ne renomme pas le fichier partagé');
+select pg_temp.check((select count(*) from storage.objects where name = '22222222-2222-2222-2222-222222222222/poly.pdf') = 1, 'un membre ne supprime pas le fichier partagé');
+update files set trashed_at = now() where id = 'f1f1f1f1-0000-0000-0000-000000000001';
+reset role;
+select pg_temp.as_user('55555555-5555-5555-5555-555555555555');
+select pg_temp.check((select count(*) from files) = 0
+  and (select count(*) from storage.objects where name = '22222222-2222-2222-2222-222222222222/poly.pdf') = 0,
+  'un fichier mis à la corbeille n''est plus partagé');
+
+-- Quota : au-delà, plus d'envoi
+reset role;
+update storage.objects set metadata = '{"size": 3000000000}' where name = '55555555-5555-5555-5555-555555555555/a.pdf';
+select pg_temp.as_user('55555555-5555-5555-5555-555555555555');
+do $$ begin
+  insert into storage.objects (bucket_id, name, owner_id) values
+    ('fichiers', '55555555-5555-5555-5555-555555555555/b.pdf', '55555555-5555-5555-5555-555555555555');
+  raise exception 'ÉCHEC : quota dépassé';
+exception when insufficient_privilege then raise notice 'ok  plus d''envoi une fois le quota atteint';
+end $$;
+-- Supprimer définitivement le fichier retire la publication qui n'était que lui
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+delete from files where id = 'f1f1f1f1-0000-0000-0000-000000000001';
+select pg_temp.check((select count(*) from circle_posts where id = 'ffffffff-0000-0000-0000-0000000000a2') = 0, 'supprimer un fichier retire la publication qui le partageait');
+reset role;
+\echo 'Tests des Fichiers : ok.'

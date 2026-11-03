@@ -1,5 +1,6 @@
 import "server-only";
 import { requireUser } from "@/lib/auth";
+import { signFiles } from "@/lib/fichiers";
 import type { Circle, CircleComment, CirclePost, CircleReaction } from "@/lib/database.types";
 
 /** Lectures de l'espace « Cercles ». La RLS ne renvoie que les cercles dont on est membre. */
@@ -17,6 +18,8 @@ export type CerclesData = {
   members: Record<string, { id: string; role: "owner" | "member" }[]>;
   /** Publications déjà ajoutées à mon agenda. */
   inAgenda: string[];
+  /** Fichiers joints lisibles (URL signées d'une heure), par id de fichier. */
+  files: Map<string, { url: string; name: string; mime: string; size: number }>;
 };
 
 export async function getCercles(circleId: string | null): Promise<CerclesData> {
@@ -34,7 +37,7 @@ export async function getCercles(circleId: string | null): Promise<CerclesData> 
   if (error) throw error;
   const ids = (posts ?? []).map((p) => p.id);
   const none = ["00000000-0000-0000-0000-000000000000"];
-  const [reactions, comments, recent, agenda] = await Promise.all([
+  const [reactions, comments, recent, agenda, files] = await Promise.all([
     supabase.from("circle_reactions").select("*").in("post_id", ids.length ? ids : none),
     supabase.from("circle_comments").select("*").in("post_id", ids.length ? ids : none).order("created_at"),
     // Pour compter les nouveautés : publications des autres depuis ma dernière visite.
@@ -44,6 +47,7 @@ export async function getCercles(circleId: string | null): Promise<CerclesData> 
       .neq("author_id", user.id)
       .gte("created_at", [...mine.values()].sort()[0] ?? new Date().toISOString()),
     supabase.from("events").select("circle_post_id").in("circle_post_id", ids.length ? ids : none),
+    signFiles((posts ?? []).map((p) => p.file_id).filter((v): v is string => !!v)),
   ]);
   for (const r of [reactions, comments, recent, agenda]) if (r.error) throw r.error;
 
@@ -72,6 +76,7 @@ export async function getCercles(circleId: string | null): Promise<CerclesData> 
     names,
     members: byCircle,
     inAgenda: (agenda.data ?? []).map((e) => e.circle_post_id).filter((v): v is string => !!v),
+    files,
   };
 }
 
