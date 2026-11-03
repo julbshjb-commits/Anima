@@ -23,6 +23,17 @@ export default function Connexion({ searchParams }: PageProps<"/connexion">) {
           <Suspense>
             <Form searchParams={searchParams} />
           </Suspense>
+          <p className="text-xs text-doux leading-relaxed">
+            En continuant, tu acceptes les{" "}
+            <Link href="/conditions" className="underline underline-offset-4">
+              conditions d'utilisation
+            </Link>{" "}
+            et la{" "}
+            <Link href="/confidentialite" className="underline underline-offset-4">
+              politique de confidentialité
+            </Link>
+            .
+          </p>
         </div>
       </section>
       <aside

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Design system Anima : couleurs de base, polices, et thème sombre. */
+/* Design system Anima : couleurs de base et polices (voir la maquette « Design system »). */
 @theme {
   --color-noir: #151515;
   --color-anthracite: #292826;
@@ -12,6 +12,8 @@
   --color-lin: #efebe3;
   --color-terre: #b4654a;
   --color-sauge: #9db09a;
+  --color-encre: #3a3733;
+  --color-gris-clair: #a39d93;
 
   --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
@@ -29,19 +31,11 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fond: #121211;
-    --surface: #1c1b1a;
-    --surface-2: var(--color-anthracite);
-    --texte: var(--color-casse);
-    --texte-doux: #a39d93;
-    --trait: rgb(245 243 238 / 0.12);
-    --accent: var(--color-casse);
-    --accent-texte: var(--color-noir);
-    color-scheme: dark;
-  }
-}
+/*
+ * Thème sombre : prévu par le design system (Home mobile), mais pas encore
+ * dessiné pour chaque écran. Le site reste clair, comme les maquettes, tant
+ * que les écrans sombres n'existent pas.
+ */
 
 @theme inline {
   --color-fond: var(--fond);
@@ -77,4 +71,23 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--texte-doux);
+}
+
+/* Pages légales : titres et listes lisibles sans surcharger le design. */
+.legal h2 {
+  font-family: var(--font-serif);
+  font-size: 1.875rem;
+  line-height: 1.15;
+  margin-top: 1.5rem;
+}
+.legal ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.legal a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }

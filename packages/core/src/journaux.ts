@@ -45,16 +45,28 @@ export const MOOD_META: Record<Mood, { label: string; color: string }> = {
   melancolique: { label: "Mélancolique", color: "#5E6A7D" },
 };
 
-/** Couvertures disponibles au lancement (une par collection). */
+/**
+ * Styles de couverture, repris des collections du design system :
+ * chaque style décide où et comment le titre du journal s'affiche.
+ */
+export const COVER_STYLES = ["minimaliste", "editorial", "vintage", "classique", "moderne", "artistique", "abstrait"] as const;
+export type CoverStyle = (typeof COVER_STYLES)[number];
+
+/**
+ * Couvertures disponibles au lancement. Les identifiants sont stockés en base :
+ * ne jamais en renommer un, seulement en ajouter. `from`/`to` restent pour les
+ * anciens écrans (dégradé) ; `bg`/`fg` sont les couleurs des maquettes.
+ */
 export const COVERS = [
-  { id: "minimaliste-ivoire", label: "Ivoire", from: "#E8E1D6", to: "#C8B99F" },
-  { id: "nature-sauge", label: "Sauge", from: "#9DB09A", to: "#5F7360" },
-  { id: "nuit-encre", label: "Encre", from: "#292826", to: "#151515" },
-  { id: "voyage-terracotta", label: "Terracotta", from: "#D6A9A0", to: "#B4654A" },
-  { id: "reve-brume", label: "Brume", from: "#8C9BB0", to: "#5E6A7D" },
-  { id: "lumiere-miel", label: "Miel", from: "#E9D49A", to: "#D9B95C" },
-  { id: "pierre-galet", label: "Galet", from: "#B5AEA4", to: "#65615B" },
-] as const;
+  { id: "minimaliste-ivoire", label: "Ivoire", style: "minimaliste", bg: "#E8E1D6", fg: "#151515", from: "#E8E1D6", to: "#E8E1D6" },
+  { id: "nuit-encre", label: "Encre", style: "classique", bg: "#1F2A3A", fg: "#E8E1D6", from: "#1F2A3A", to: "#1F2A3A" },
+  { id: "nature-sauge", label: "Sauge", style: "editorial", bg: "#3F4A3C", fg: "#F5F3EE", from: "#3F4A3C", to: "#3F4A3C" },
+  { id: "vintage-bordeaux", label: "Bordeaux", style: "vintage", bg: "#6B2E2A", fg: "#E8E1D6", from: "#6B2E2A", to: "#6B2E2A" },
+  { id: "voyage-terracotta", label: "Terracotta", style: "moderne", bg: "#B4654A", fg: "#F5F3EE", from: "#B4654A", to: "#B4654A" },
+  { id: "reve-brume", label: "Brume", style: "artistique", bg: "#93A3B2", fg: "#151515", from: "#93A3B2", to: "#93A3B2" },
+  { id: "lumiere-miel", label: "Miel", style: "abstrait", bg: "#C79A4B", fg: "#151515", from: "#C79A4B", to: "#C79A4B" },
+  { id: "pierre-galet", label: "Galet", style: "minimaliste", bg: "#65615B", fg: "#F5F3EE", from: "#65615B", to: "#65615B" },
+] as const satisfies readonly { id: string; label: string; style: CoverStyle; bg: string; fg: string; from: string; to: string }[];
 export type CoverId = (typeof COVERS)[number]["id"];
 export const COVER_IDS = COVERS.map((c) => c.id) as [CoverId, ...CoverId[]];
 

@@ -6,12 +6,12 @@ import { btnGhost, card } from "@/components/ui";
 import { DeleteForm, NameForm } from "./Forms";
 import { signOut } from "./actions";
 
-export const metadata: Metadata = { title: "Compte" };
+export const metadata: Metadata = { title: "Réglages" };
 
 export default function ComptePage() {
   return (
-    <main className="mx-auto max-w-2xl px-5 py-10 flex flex-col gap-10">
-      <h1 className="titre text-5xl">Ton compte</h1>
+    <main className="max-w-3xl px-5 py-8 lg:px-12 lg:pt-10 flex flex-col gap-10">
+      <div className="flex flex-col gap-1.5"><p className="surtitre">Ton compte</p><h1 className="titre text-[44px] leading-[1.05]">Réglages</h1></div>
       <Suspense fallback={<p className="text-doux">Chargement…</p>}>
         <Compte />
       </Suspense>

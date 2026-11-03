@@ -9,9 +9,15 @@ import type { Journal, JournalEntry, Profile } from "@/lib/database.types";
  * c'est la RLS de Postgres qui décide de ce qu'il peut voir.
  */
 
-export type JournalCard = Journal & { role: JournalRole; members: Pick<Profile, "id" | "display_name">[] };
+export type LastEntry = { author_id: string; created_at: string };
+export type JournalCard = Journal & {
+  role: JournalRole;
+  members: Pick<Profile, "id" | "display_name">[];
+  /** Dernière entrée écrite (null si le journal est vide). */
+  last: LastEntry | null;
+};
 
-export async function listMyJournals(): Promise<{ intime: JournalCard | null; shared: JournalCard[]; me: Profile | null }> {
+export async function listMyJournals(): Promise<{ intime: JournalCard | null; shared: JournalCard[]; me: Profile | null; userId: string }> {
   const { supabase, user } = await requireUser();
   const [{ data: memberships, error }, { data: me }] = await Promise.all([
     supabase
@@ -25,9 +31,21 @@ export async function listMyJournals(): Promise<{ intime: JournalCard | null; sh
 
   const journals = (memberships ?? []).map((m) => ({ ...(m.journal as unknown as Journal), role: m.role as JournalRole }));
   const ids = journals.map((j) => j.id);
-  const { data: members } = ids.length
-    ? await supabase.from("journal_members").select("journal_id, profile:profiles!inner(id, display_name)").in("journal_id", ids)
-    : { data: [] };
+  const [{ data: members }, { data: recent }] = ids.length
+    ? await Promise.all([
+        supabase.from("journal_members").select("journal_id, profile:profiles!inner(id, display_name)").in("journal_id", ids),
+        // Les entrées les plus récentes, pour afficher « Léa, hier » sous chaque couverture.
+        supabase
+          .from("journal_entries")
+          .select("journal_id, author_id, created_at")
+          .in("journal_id", ids)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(300),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const lastByJournal = new Map<string, LastEntry>();
+  for (const e of recent ?? []) if (!lastByJournal.has(e.journal_id)) lastByJournal.set(e.journal_id, e);
 
   const byJournal = new Map<string, Pick<Profile, "id" | "display_name">[]>();
   for (const m of members ?? []) {
@@ -36,13 +54,14 @@ export async function listMyJournals(): Promise<{ intime: JournalCard | null; sh
     byJournal.set(m.journal_id, list);
   }
   const cards = journals
-    .map((j) => ({ ...j, members: byJournal.get(j.id) ?? [] }))
-    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    .map((j) => ({ ...j, members: byJournal.get(j.id) ?? [], last: lastByJournal.get(j.id) ?? null }))
+    .sort((a, b) => (b.last?.created_at ?? b.updated_at).localeCompare(a.last?.created_at ?? a.updated_at));
 
   return {
     intime: cards.find((j) => j.kind === "intime" && j.owner_id === user.id) ?? null,
     shared: cards.filter((j) => j.kind !== "intime"),
     me: me ?? null,
+    userId: user.id,
   };
 }
 
