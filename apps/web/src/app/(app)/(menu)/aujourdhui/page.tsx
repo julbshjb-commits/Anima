@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { MOOD_META, formatLongDate, toIsoDate, type Mood } from "@anima/core";
+import { MOOD_META, formatLongDate, parseIsoDate, todayIn, toIsoDate, zonedParts, type Mood } from "@anima/core";
+import type { Task } from "@/lib/database.types";
 import { getMyMoods, listMyJournals, type JournalCard } from "@/lib/data";
+import { getTodayTasks } from "@/lib/organiser";
+import { toggleTask } from "../../organiser/actions";
 import { relativeTime } from "@/lib/format";
 import { Cover } from "@/components/Cover";
 import { Avatar } from "@/components/Avatar";
@@ -28,13 +31,19 @@ const card = "rounded-xl bg-papier border border-noir/8 p-7 flex flex-col gap-5 
 
 async function Accueil() {
   await connection(); // l'heure et la date dépendent de la requête
+  // Le serveur tourne en UTC : la date et l'heure sont celles de Paris.
   const now = new Date();
-  const today = toIsoDate(now);
+  const today = todayIn();
+  const t = parseIsoDate(today);
   // Cinq semaines complètes, du lundi d'il y a 4 semaines jusqu'à dimanche prochain.
-  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) - 28);
-  const [{ intime, shared, me, userId }, moods] = await Promise.all([listMyJournals(), getMyMoods(toIsoDate(monday))]);
+  const monday = new Date(t.getFullYear(), t.getMonth(), t.getDate() - ((t.getDay() + 6) % 7) - 28);
+  const [{ intime, shared, me, userId }, moods, tasks] = await Promise.all([
+    listMyJournals(),
+    getMyMoods(toIsoDate(monday)),
+    getTodayTasks(today),
+  ]);
   const name = me?.display_name;
-  const h = now.getHours();
+  const h = Number(zonedParts(now.toISOString()).time.slice(0, 2));
   const hello = `${h < 5 || h >= 18 ? "Bonsoir" : "Bonjour"}${name ? `, ${name}` : ""}`;
 
   // Le journal partagé le plus actif : là où quelqu'un d'autre a écrit en dernier.
@@ -96,6 +105,7 @@ async function Accueil() {
           )}
         </section>
 
+        <TodayTasks tasks={tasks} />
         <MoodWeeks monday={monday} today={today} moods={moods} />
       </div>
     </>
@@ -122,7 +132,7 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
         </div>
       </section>
     );
-  const other = j.last && j.last.author_id !== me && toIsoDate(new Date(j.last.created_at)) === today ? j.members.find((m) => m.id === j.last?.author_id) : undefined;
+  const other = j.last && j.last.author_id !== me && zonedParts(j.last.created_at).day === today ? j.members.find((m) => m.id === j.last?.author_id) : undefined;
   return (
     <section className="rounded-xl bg-noir text-casse p-8 flex flex-col gap-6 justify-between">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -176,6 +186,59 @@ function IntimeCard({ j }: { j: JournalCard | null }) {
           </form>
         )}
       </div>
+    </section>
+  );
+}
+
+/** Les tâches du jour (et celles en retard), cochables depuis l'accueil. */
+function TodayTasks({ tasks }: { tasks: Task[] }) {
+  const doneCount = tasks.filter((t) => t.done_at).length;
+  return (
+    <section className={card}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="titre text-2xl">
+          <Link href="/organiser" className="hover:underline underline-offset-4">
+            Aujourd'hui
+          </Link>
+        </h2>
+        {tasks.length > 0 && (
+          <span className="text-[13px] text-doux">
+            {doneCount} sur {tasks.length}
+          </span>
+        )}
+      </div>
+      {tasks.length === 0 ? (
+        <p className="text-sm text-doux leading-relaxed">
+          Rien de prévu.{" "}
+          <Link href="/organiser#ajouter" className="underline underline-offset-4 text-noir">
+            Ajouter une tâche
+          </Link>
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-3.5">
+          {tasks.slice(0, 5).map((t) => (
+            <li key={t.id} className="flex items-center gap-3">
+              <form action={toggleTask}>
+                <input type="hidden" name="id" value={t.id} />
+                <input type="hidden" name="done" value={t.done_at ? "0" : "1"} />
+                <button
+                  type="submit"
+                  aria-label={t.done_at ? `Rouvrir « ${t.title} »` : `Terminer « ${t.title} »`}
+                  className={`w-[18px] h-[18px] rounded-[4px] grid place-items-center border-[1.5px] ${t.done_at ? "bg-noir border-noir text-casse" : "border-noir/40 hover:border-noir"}`}
+                >
+                  {t.done_at && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="m5 12 5 5 9-10" />
+                    </svg>
+                  )}
+                </button>
+              </form>
+              <span className={`flex-1 min-w-0 truncate text-[15px] ${t.done_at ? "line-through text-doux" : ""}`}>{t.title}</span>
+              {t.due_time && <span className="text-xs text-doux">{t.due_time.slice(0, 5).replace(/^0/, "").replace(":00", " h").replace(":", " h ")}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

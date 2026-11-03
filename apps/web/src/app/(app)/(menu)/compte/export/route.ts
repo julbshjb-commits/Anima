@@ -13,7 +13,7 @@ export async function GET() {
   if (!auth.user) return NextResponse.json({ error: "non connecté" }, { status: 401 });
   const uid = auth.user.id;
 
-  const [profile, memberships, entries, attachments] = await Promise.all([
+  const [profile, memberships, entries, attachments, projects, tasks, events, rituals, checks] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
     supabase.from("journal_members").select("role, joined_at, journal:journals(id, title, kind, created_at)").eq("user_id", uid),
     supabase
@@ -23,6 +23,11 @@ export async function GET() {
       .is("deleted_at", null)
       .order("entry_date"),
     supabase.from("attachments").select("id, journal_id, entry_id, storage_path, mime_type, size_bytes, created_at").eq("owner_id", uid),
+    supabase.from("projects").select("*").eq("owner_id", uid),
+    supabase.from("tasks").select("*").eq("owner_id", uid),
+    supabase.from("events").select("*").eq("owner_id", uid),
+    supabase.from("rituals").select("*").eq("owner_id", uid),
+    supabase.from("ritual_checks").select("ritual_id, day").eq("owner_id", uid),
   ]);
 
   const body = {
@@ -32,6 +37,7 @@ export async function GET() {
     journaux: memberships.data,
     entrees: entries.data,
     photos: attachments.data,
+    organiser: { projets: projects.data, taches: tasks.data, agenda: events.data, rituels: rituals.data, rituels_coches: checks.data },
   };
   return new NextResponse(JSON.stringify(body, null, 2), {
     headers: {

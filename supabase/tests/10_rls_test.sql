@@ -187,3 +187,48 @@ end $$;
 
 reset role;
 \echo 'Tous les tests de règles d''accès passent.'
+
+-- ---------------------------------------------------------------------
+-- M'organiser : tout est personnel
+-- ---------------------------------------------------------------------
+reset role;
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+insert into projects (id, title, color) values ('99999999-0000-0000-0000-000000000001', 'Partiels', 'pensif');
+insert into tasks (id, title, project_id, due_date) values ('99999999-0000-0000-0000-0000000000a1', 'Rendre la fiche TD 4', '99999999-0000-0000-0000-000000000001', current_date);
+insert into events (title, starts_at) values ('Cours d''économie', now());
+insert into rituals (id, title) values ('99999999-0000-0000-0000-0000000000b1', 'Lire 20 minutes');
+insert into ritual_checks (ritual_id, day) values ('99999999-0000-0000-0000-0000000000b1', current_date);
+select pg_temp.check((select owner_id from tasks where id = '99999999-0000-0000-0000-0000000000a1') = auth.uid(), 'une tâche appartient à sa créatrice');
+
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+select pg_temp.check((select count(*) from projects) = 0, 'Léa ne voit pas les projets de Nassim');
+select pg_temp.check((select count(*) from tasks) = 0, 'Léa ne voit pas les tâches de Nassim');
+select pg_temp.check((select count(*) from events) = 0, 'Léa ne voit pas l''agenda de Nassim');
+select pg_temp.check((select count(*) from rituals) = 0 and (select count(*) from ritual_checks) = 0, 'Léa ne voit pas les rituels de Nassim');
+update tasks set title = 'Piraté' where id = '99999999-0000-0000-0000-0000000000a1';
+delete from tasks where id = '99999999-0000-0000-0000-0000000000a1';
+
+-- Léa ne peut pas ranger sa tâche dans le projet de Nassim
+do $$ begin
+  insert into tasks (title, project_id) values ('Intrusion', '99999999-0000-0000-0000-000000000001');
+  raise exception 'ÉCHEC : tâche rangée dans le projet d''autrui';
+exception when insufficient_privilege then raise notice 'ok  impossible d''utiliser le projet d''autrui';
+end $$;
+-- Ni cocher un rituel de Nassim
+do $$ begin
+  insert into ritual_checks (ritual_id, day) values ('99999999-0000-0000-0000-0000000000b1', current_date - 1);
+  raise exception 'ÉCHEC : rituel d''autrui coché';
+exception when insufficient_privilege then raise notice 'ok  impossible de cocher le rituel d''autrui';
+end $$;
+-- Ni créer une tâche au nom de Nassim
+do $$ begin
+  insert into tasks (owner_id, title) values ('11111111-1111-1111-1111-111111111111', 'Pour toi');
+  raise exception 'ÉCHEC : tâche créée pour autrui';
+exception when insufficient_privilege then raise notice 'ok  impossible de créer une tâche pour autrui';
+end $$;
+
+reset role;
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+select pg_temp.check((select title from tasks where id = '99999999-0000-0000-0000-0000000000a1') = 'Rendre la fiche TD 4', 'la tâche de Nassim est intacte');
+reset role;

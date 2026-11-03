@@ -77,6 +77,52 @@ export type JournalInvite = {
   created_at: Timestamp;
 };
 
+export type Project = {
+  id: string;
+  owner_id: string;
+  title: string;
+  color: Mood;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type Task = {
+  id: string;
+  owner_id: string;
+  project_id: string | null;
+  title: string;
+  note: string | null;
+  due_date: string | null;
+  due_time: string | null;
+  duration_min: number | null;
+  done_at: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type CalendarEvent = {
+  id: string;
+  owner_id: string;
+  title: string;
+  place: string | null;
+  color: Mood;
+  starts_at: Timestamp;
+  ends_at: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type Ritual = {
+  id: string;
+  owner_id: string;
+  title: string;
+  created_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type RitualCheck = { ritual_id: string; owner_id: string; day: string };
+
 export type Database = {
   public: {
     Tables: {
@@ -102,6 +148,22 @@ export type Database = {
         { owner_id: string; journal_id: string; entry_id?: string | null; storage_path: string; mime_type: string; size_bytes: number }
       >;
       journal_invites: Table<JournalInvite, never>;
+      projects: Table<Project, { title: string; color?: Mood; archived_at?: string | null }>;
+      tasks: Table<
+        Task,
+        {
+          title: string;
+          project_id?: string | null;
+          note?: string | null;
+          due_date?: string | null;
+          due_time?: string | null;
+          duration_min?: number | null;
+          done_at?: string | null;
+        }
+      >;
+      events: Table<CalendarEvent, { title: string; place?: string | null; color?: Mood; starts_at: string; ends_at?: string | null }>;
+      rituals: Table<Ritual, { title: string; archived_at?: string | null }>;
+      ritual_checks: Table<RitualCheck, { ritual_id: string; day: string }>;
     };
     Views: Record<never, never>;
     Functions: {
