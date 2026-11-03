@@ -110,6 +110,7 @@ export type CalendarEvent = {
   color: Mood;
   starts_at: Timestamp;
   ends_at: Timestamp | null;
+  circle_post_id: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 };
@@ -162,6 +163,80 @@ export type NoteBlock = {
   kind: NoteBlockKind;
   content: string;
   done_at: Timestamp | null;
+  file_id: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type Circle = {
+  id: string;
+  owner_id: string;
+  name: string;
+  color: Mood;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type CircleMember = { circle_id: string; user_id: string; role: "owner" | "member"; joined_at: Timestamp; last_seen_at: Timestamp };
+
+export type CirclePost = {
+  id: string;
+  circle_id: string;
+  author_id: string;
+  body: string;
+  event_title: string | null;
+  event_day: string | null;
+  event_end_day: string | null;
+  event_time: string | null;
+  event_place: string | null;
+  quote_text: string | null;
+  quote_source: string | null;
+  file_id: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type CircleReaction = { post_id: string; circle_id: string; user_id: string; kind: "coeur" | "jensuis"; created_at: Timestamp };
+export type CircleComment = { id: string; post_id: string; circle_id: string; author_id: string; body: string; created_at: Timestamp };
+
+export type WorkKind = "livre" | "film" | "serie" | "podcast" | "article";
+export type WorkStatus = "a-lire" | "en-cours" | "termine";
+
+export type Work = {
+  id: string;
+  owner_id: string;
+  kind: WorkKind;
+  title: string;
+  creator: string | null;
+  cover: string;
+  status: WorkStatus;
+  progress: number | null;
+  progress_total: number | null;
+  rating: number | null;
+  started_on: string | null;
+  finished_on: string | null;
+  url: string | null;
+  note: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type Quote = { id: string; owner_id: string; work_id: string | null; text: string; source: string | null; created_at: Timestamp };
+export type ReadingGoal = { owner_id: string; year: number; target: number };
+
+export type Folder = { id: string; owner_id: string; parent_id: string | null; name: string; created_at: Timestamp; updated_at: Timestamp };
+
+export type FileRow = {
+  id: string;
+  owner_id: string;
+  folder_id: string | null;
+  name: string;
+  storage_path: string;
+  mime_type: string;
+  size_bytes: number;
+  starred: boolean;
+  note_id: string | null;
+  trashed_at: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 };
@@ -205,14 +280,41 @@ export type Database = {
           note_id?: string | null;
         }
       >;
-      events: Table<CalendarEvent, { title: string; place?: string | null; color?: Mood; starts_at: string; ends_at?: string | null }>;
+      events: Table<CalendarEvent, { title: string; place?: string | null; color?: Mood; starts_at: string; ends_at?: string | null; circle_post_id?: string | null }>;
       rituals: Table<Ritual, { title: string; archived_at?: string | null }>;
       ritual_checks: Table<RitualCheck, { ritual_id: string; day: string }>;
       notebooks: Table<Notebook, { title: string; kind?: NotebookKind; subtitle?: string | null; cover?: string; archived_at?: string | null }>;
       notebook_members: Table<NotebookMember, never>;
       notes: Table<Note, { notebook_id: string; title: string; body?: string; tags?: string[]; session_date?: string | null }>;
       /** notebook_id est recopié de la note par la base ; on l'envoie quand même. */
-      note_blocks: Table<NoteBlock, { note_id: string; notebook_id: string; kind?: NoteBlockKind; content: string }>;
+      note_blocks: Table<NoteBlock, { note_id: string; notebook_id: string; kind?: NoteBlockKind; content: string; file_id?: string | null }>;
+      circles: Table<Circle, { name: string; color?: Mood }>;
+      circle_members: Table<CircleMember, never>;
+      circle_posts: Table<
+        CirclePost,
+        {
+          circle_id: string;
+          body?: string;
+          event_title?: string | null;
+          event_day?: string | null;
+          event_end_day?: string | null;
+          event_time?: string | null;
+          event_place?: string | null;
+          quote_text?: string | null;
+          quote_source?: string | null;
+          file_id?: string | null;
+        }
+      >;
+      /** circle_id est recopié de la publication par la base ; on l'envoie quand même. */
+      circle_reactions: Table<CircleReaction, { post_id: string; circle_id: string; kind: "coeur" | "jensuis" }>;
+      circle_comments: Table<CircleComment, { post_id: string; circle_id: string; body: string }>;
+      circle_invites: Table<{ id: string; circle_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
+      works: Table<Work, Partial<Omit<Work, "id" | "owner_id" | "created_at" | "updated_at">> & { title: string }>;
+      quotes: Table<Quote, { work_id?: string | null; text: string; source?: string | null }>;
+      folders: Table<Folder, { name: string; parent_id?: string | null }>;
+      /** Taille et type sont lus depuis le stockage par la base. */
+      files: Table<FileRow, { name: string; storage_path: string; folder_id?: string | null; starred?: boolean; note_id?: string | null; trashed_at?: string | null }>;
+      reading_goals: Table<ReadingGoal, { year: number; target: number }>;
       notebook_invites: Table<{ id: string; notebook_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
     };
     Views: Record<never, never>;
@@ -223,9 +325,14 @@ export type Database = {
       leave_journal: { Args: { p_journal_id: string }; Returns: undefined };
       prepare_account_deletion: { Args: Record<string, never>; Returns: undefined };
       create_notebook_invite: { Args: { p_notebook_id: string }; Returns: { code: string; expires_at: string }[] };
-      join_with_code: { Args: { p_code: string }; Returns: { type: "journal" | "carnet"; id: string } | null };
+      join_with_code: { Args: { p_code: string }; Returns: { type: "journal" | "carnet" | "cercle"; id: string } | null };
+      create_circle_invite: { Args: { p_circle_id: string }; Returns: { code: string; expires_at: string }[] };
+      leave_circle: { Args: { p_circle_id: string }; Returns: undefined };
+      mark_circles_seen: { Args: { p_circle_id?: string | null }; Returns: undefined };
       leave_notebook: { Args: { p_notebook_id: string }; Returns: undefined };
       toggle_question: { Args: { p_block_id: string }; Returns: undefined };
+      storage_used_bytes: { Args: Record<string, never>; Returns: number };
+      file_quota_bytes: { Args: Record<string, never>; Returns: number };
     };
     Enums: {
       journal_kind: JournalKind;

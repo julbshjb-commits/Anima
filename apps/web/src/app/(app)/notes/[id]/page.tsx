@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { formatLongDate } from "@anima/core";
+import { fileType, formatLongDate } from "@anima/core";
 import { getNote, getNotesHome } from "@/lib/notes";
 import { relativeTime } from "@/lib/format";
 import { IconCoche } from "@/components/icons";
@@ -25,7 +25,7 @@ async function NoteView({ params }: PageProps<"/notes/[id]">) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const detail = await getNote(id);
   if (!detail) notFound();
-  const { note, notebook, tasks, canEdit } = detail;
+  const { note, notebook, tasks, files, canEdit } = detail;
   if (notebook.kind === "cours")
     redirect(`/notes/cours/${notebook.id}?seance=${note.id}`);
   const home = await getNotesHome({ notebookId: notebook.id });
@@ -115,6 +115,30 @@ async function NoteView({ params }: PageProps<"/notes/[id]">) {
             M'organiser, au bon jour.
           </p>
         </section>
+
+        {files.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h3 className="surtitre">Fichiers liés</h3>
+            {files.map((f) => (
+              <a
+                key={f.id}
+                href={`/fichiers/ouvrir/${f.id}`}
+                target="_blank"
+                rel="noopener"
+                className="flex items-center gap-2.5 text-sm hover:underline underline-offset-4 min-w-0"
+              >
+                <span
+                  aria-hidden
+                  className="w-6 h-6 rounded grid place-items-center text-[8px] font-semibold text-casse shrink-0"
+                  style={{ background: fileType(f.mime_type).color }}
+                >
+                  {fileType(f.mime_type).badge}
+                </span>
+                <span className="truncate">{f.name}</span>
+              </a>
+            ))}
+          </section>
+        )}
 
         <section className="flex flex-col gap-2">
           <h3 className="surtitre">Carnet</h3>

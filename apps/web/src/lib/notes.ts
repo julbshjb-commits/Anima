@@ -1,5 +1,6 @@
 import "server-only";
 import { requireUser } from "@/lib/auth";
+import { signFiles } from "@/lib/fichiers";
 import type { Note, NoteBlock, Notebook, Task } from "@/lib/database.types";
 
 /** Lectures de l'espace « Notes ». La RLS ne renvoie que les carnets dont on est membre. */
@@ -51,6 +52,8 @@ export type NoteDetail = {
   notebook: Notebook;
   /** Tâches de la personne connectée nées de cette note. */
   tasks: Task[];
+  /** Mes fichiers liés à cette note (« Lier à une note »). */
+  files: { id: string; name: string; mime_type: string }[];
   canEdit: boolean;
 };
 
@@ -58,9 +61,10 @@ export async function getNote(id: string): Promise<NoteDetail | null> {
   const { supabase, user } = await requireUser();
   const { data: note } = await supabase.from("notes").select("*").eq("id", id).maybeSingle();
   if (!note) return null;
-  const [notebook, tasks] = await Promise.all([
+  const [notebook, tasks, files] = await Promise.all([
     supabase.from("notebooks").select("*").eq("id", note.notebook_id).single(),
     supabase.from("tasks").select("*").eq("note_id", id).order("created_at"),
+    supabase.from("files").select("id, name, mime_type").eq("note_id", id).eq("owner_id", user.id).is("trashed_at", null).order("name"),
   ]);
   if (notebook.error) throw notebook.error;
   return {
@@ -68,6 +72,7 @@ export async function getNote(id: string): Promise<NoteDetail | null> {
     note,
     notebook: notebook.data,
     tasks: tasks.data ?? [],
+    files: files.data ?? [],
     canEdit: note.author_id === user.id || notebook.data.owner_id === user.id,
   };
 }
@@ -87,6 +92,8 @@ export type CoursData = {
   /** Mes carnets perso, pour « Copier dans mon carnet perso ». */
   persoNotebooks: { id: string; title: string }[];
   tasks: Task[];
+  /** Photos et fichiers joints aux passages (URL signées d'une heure). */
+  files: Awaited<ReturnType<typeof signFiles>>;
 };
 
 export async function getCours(notebookId: string, seanceId: string | null): Promise<CoursData | null> {
@@ -136,6 +143,7 @@ export async function getCours(notebookId: string, seanceId: string | null): Pro
         supabase.from("tasks").select("*").eq("note_id", current.id).order("created_at"),
       ])
     : [{ data: [] as NoteBlock[] }, { data: [] as Task[] }];
+  const files = await signFiles((blocks.data ?? []).map((b) => b.file_id).filter((v): v is string => !!v));
 
   return {
     userId: user.id,
@@ -148,6 +156,7 @@ export async function getCours(notebookId: string, seanceId: string | null): Pro
     questions: questions.data ?? [],
     persoNotebooks: perso.data ?? [],
     tasks: tasks.data ?? [],
+    files,
   };
 }
 

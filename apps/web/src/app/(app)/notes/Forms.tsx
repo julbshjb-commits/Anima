@@ -2,6 +2,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { COVERS, formatInviteCode } from "@anima/core";
 import { IconPlus } from "@/components/icons";
+import { AttachFile } from "@/components/AttachFile";
 import {
   addBlock,
   addSeance,
@@ -372,9 +373,11 @@ export function NewSeance({
 
 /** Zone d'écriture en bas de la séance : un passage ou une question pour le prof. */
 export function AddBlock({
+  userId,
   noteId,
   notebookId,
 }: {
+  userId: string;
   noteId: string;
   notebookId: string;
 }) {
@@ -395,7 +398,7 @@ export function AddBlock({
       <input type="hidden" name="kind" value={kind} />
       <textarea
         name="content"
-        required
+        required={kind === "question"}
         maxLength={20000}
         rows={3}
         aria-label={kind === "question" ? "Question pour le prof" : "Ton ajout"}
@@ -410,6 +413,13 @@ export function AddBlock({
         }}
         className="w-full [field-sizing:content] min-h-24 resize-none rounded-xl bg-papier border border-noir/10 p-4 text-[15px] leading-[1.6] focus:outline-none focus:border-noir placeholder:italic placeholder:text-doux"
       />
+      {kind === "texte" && (
+        <AttachFile
+          key={state.ok ?? 0}
+          userId={userId}
+          label="Joindre une photo du tableau ou un fichier"
+        />
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <div
           className="flex p-1 rounded-full bg-lin text-[13px]"

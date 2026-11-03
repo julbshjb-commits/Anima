@@ -48,10 +48,18 @@ export const seanceSchema = z.object({
   sessionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide."),
 });
 
-export const blockSchema = z.object({
-  kind: z.enum(["texte", "question"]).default("texte"),
-  content: z.string().trim().min(1, "Écris quelque chose.").max(20000, "20 000 caractères maximum."),
-});
+/** Texte d'un passage modifié. */
+export const blockContentSchema = z.string().trim().min(1, "Écris quelque chose.").max(20000, "20 000 caractères maximum.");
+
+/** Un passage de séance ; avec une photo ou un fichier joint, le texte devient facultatif. */
+export const blockSchema = z
+  .object({
+    kind: z.enum(["texte", "question"]).default("texte"),
+    content: z.string().trim().max(20000, "20 000 caractères maximum.").default(""),
+    hasFile: z.boolean().default(false),
+  })
+  .refine((b) => b.content.length > 0 || b.hasFile, { message: "Écris quelque chose.", path: ["content"] })
+  .transform(({ kind, content }) => ({ kind, content }));
 
 /** Texte brut d'une séance, pour la copier dans un carnet perso ou la fiche de révision. */
 export function seanceToText(blocks: { kind: string; content: string; author: string }[]): string {
