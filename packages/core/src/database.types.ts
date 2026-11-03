@@ -97,6 +97,7 @@ export type Task = {
   due_time: string | null;
   duration_min: number | null;
   done_at: Timestamp | null;
+  note_id: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 };
@@ -122,6 +123,48 @@ export type Ritual = {
 };
 
 export type RitualCheck = { ritual_id: string; owner_id: string; day: string };
+
+export type NotebookKind = "perso" | "cours";
+
+export type Notebook = {
+  id: string;
+  owner_id: string;
+  kind: NotebookKind;
+  title: string;
+  subtitle: string | null;
+  cover: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type NotebookMember = { notebook_id: string; user_id: string; role: "owner" | "editor"; joined_at: Timestamp };
+
+export type Note = {
+  id: string;
+  notebook_id: string;
+  author_id: string | null;
+  title: string;
+  body: string;
+  tags: string[];
+  session_date: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type NoteBlockKind = "texte" | "question";
+
+export type NoteBlock = {
+  id: string;
+  note_id: string;
+  notebook_id: string;
+  author_id: string;
+  kind: NoteBlockKind;
+  content: string;
+  done_at: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
 
 export type Database = {
   public: {
@@ -159,11 +202,18 @@ export type Database = {
           due_time?: string | null;
           duration_min?: number | null;
           done_at?: string | null;
+          note_id?: string | null;
         }
       >;
       events: Table<CalendarEvent, { title: string; place?: string | null; color?: Mood; starts_at: string; ends_at?: string | null }>;
       rituals: Table<Ritual, { title: string; archived_at?: string | null }>;
       ritual_checks: Table<RitualCheck, { ritual_id: string; day: string }>;
+      notebooks: Table<Notebook, { title: string; kind?: NotebookKind; subtitle?: string | null; cover?: string; archived_at?: string | null }>;
+      notebook_members: Table<NotebookMember, never>;
+      notes: Table<Note, { notebook_id: string; title: string; body?: string; tags?: string[]; session_date?: string | null }>;
+      /** notebook_id est recopié de la note par la base ; on l'envoie quand même. */
+      note_blocks: Table<NoteBlock, { note_id: string; notebook_id: string; kind?: NoteBlockKind; content: string }>;
+      notebook_invites: Table<{ id: string; notebook_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
     };
     Views: Record<never, never>;
     Functions: {
@@ -172,11 +222,16 @@ export type Database = {
       revoke_journal_invite: { Args: { p_invite_id: string }; Returns: undefined };
       leave_journal: { Args: { p_journal_id: string }; Returns: undefined };
       prepare_account_deletion: { Args: Record<string, never>; Returns: undefined };
+      create_notebook_invite: { Args: { p_notebook_id: string }; Returns: { code: string; expires_at: string }[] };
+      join_with_code: { Args: { p_code: string }; Returns: { type: "journal" | "carnet"; id: string } | null };
+      leave_notebook: { Args: { p_notebook_id: string }; Returns: undefined };
+      toggle_question: { Args: { p_block_id: string }; Returns: undefined };
     };
     Enums: {
       journal_kind: JournalKind;
       journal_role: JournalRole;
       mood: Mood;
+      notebook_kind: NotebookKind;
     };
     CompositeTypes: Record<never, never>;
   };

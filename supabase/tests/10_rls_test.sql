@@ -232,3 +232,88 @@ reset role;
 select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
 select pg_temp.check((select title from tasks where id = '99999999-0000-0000-0000-0000000000a1') = 'Rendre la fiche TD 4', 'la tâche de Nassim est intacte');
 reset role;
+
+-- ---------------------------------------------------------------------
+-- Notes : carnets personnels fermés, carnets de cours partagés par code
+-- ---------------------------------------------------------------------
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('44444444-4444-4444-4444-444444444444', 'sami@example.org', '{"display_name":"Sami"}');
+
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+insert into notebooks (id, title, kind) values
+  ('bbbbbbbb-0000-0000-0000-000000000001', 'Économie', 'perso'),
+  ('bbbbbbbb-0000-0000-0000-000000000002', 'Droit constitutionnel', 'cours');
+insert into notes (id, notebook_id, title, body, tags) values
+  ('cccccccc-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001', 'L''offre et la demande', 'Prix d''équilibre', '{partiels}'),
+  ('cccccccc-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000002', 'Le contrôle de constitutionnalité', '', '{}');
+insert into note_blocks (note_id, notebook_id, content) values
+  ('cccccccc-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000002', 'I. Le contrôle a priori');
+select pg_temp.check((select role from notebook_members where notebook_id = 'bbbbbbbb-0000-0000-0000-000000000002' and user_id = auth.uid()) = 'owner', 'le créateur d''un carnet en est propriétaire');
+
+-- Un carnet personnel ne se partage pas
+do $$ begin
+  perform create_notebook_invite('bbbbbbbb-0000-0000-0000-000000000001');
+  raise exception 'ÉCHEC : invitation sur carnet perso';
+exception when insufficient_privilege then raise notice 'ok  un carnet personnel ne peut pas être partagé';
+end $$;
+
+create temp table nb_code as select code from create_notebook_invite('bbbbbbbb-0000-0000-0000-000000000002');
+grant select on nb_code to authenticated;
+
+-- Sami ne voit rien avant d'avoir le code
+reset role;
+select pg_temp.as_user('44444444-4444-4444-4444-444444444444');
+select pg_temp.check((select count(*) from notebooks) = 0 and (select count(*) from notes) = 0 and (select count(*) from note_blocks) = 0, 'sans invitation, Sami ne voit aucun carnet ni note');
+do $$ begin
+  insert into note_blocks (note_id, notebook_id, content) values ('cccccccc-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000002', 'Intrus');
+  raise exception 'ÉCHEC : passage ajouté sans être membre';
+exception when insufficient_privilege then raise notice 'ok  impossible d''écrire dans une séance sans être membre';
+end $$;
+do $$ begin
+  insert into tasks (title, note_id) values ('Espionner', 'cccccccc-0000-0000-0000-000000000001');
+  raise exception 'ÉCHEC : tâche liée à une note inaccessible';
+exception when insufficient_privilege then raise notice 'ok  impossible de lier une tâche à la note d''autrui';
+end $$;
+
+-- Sami rejoint le carnet de cours avec le code
+select pg_temp.check((join_with_code((select code from nb_code)) ->> 'type') = 'carnet', 'le code fait rejoindre le carnet de cours');
+select pg_temp.check((select count(*) from notebooks) = 1, 'Sami voit le carnet de cours, pas le carnet perso');
+select pg_temp.check((select count(*) from notes) = 1, 'Sami voit la séance, pas la note perso');
+select pg_temp.check((select display_name from profiles where id = '11111111-1111-1111-1111-111111111111') = 'Nassim', 'les membres du carnet voient le nom des autres');
+insert into note_blocks (id, note_id, notebook_id, kind, content) values
+  ('dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000001', 'question', 'Le partiel porte-t-il sur la séance 6 ?');
+select pg_temp.check((select notebook_id from note_blocks where id = 'dddddddd-0000-0000-0000-000000000001') = 'bbbbbbbb-0000-0000-0000-000000000002', 'le carnet d''un passage est recopié de la séance, pas choisi par le client');
+-- Sami ne modifie pas le passage de Nassim, ni la séance
+update note_blocks set content = 'Piraté' where content = 'I. Le contrôle a priori';
+update notes set title = 'Piraté' where id = 'cccccccc-0000-0000-0000-000000000002';
+-- Mais il peut cocher une question
+select toggle_question('dddddddd-0000-0000-0000-000000000001');
+-- Et créer une tâche née de la séance
+insert into tasks (title, note_id) values ('Relire la séance', 'cccccccc-0000-0000-0000-000000000002');
+
+reset role;
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+select pg_temp.check((select content from note_blocks where note_id = 'cccccccc-0000-0000-0000-000000000002' and kind = 'texte') = 'I. Le contrôle a priori', 'chacun ne modifie que ses propres passages');
+select pg_temp.check((select title from notes where id = 'cccccccc-0000-0000-0000-000000000002') = 'Le contrôle de constitutionnalité', 'un membre ne renomme pas la séance d''un autre');
+select pg_temp.check((select done_at is not null from note_blocks where id = 'dddddddd-0000-0000-0000-000000000001'), 'un membre peut cocher une question');
+select pg_temp.check((select count(*) from tasks where note_id is not null) = 0, 'la tâche de Sami reste à Sami');
+
+-- Léa, qui partage un journal avec Nassim, ne voit pas ses notes
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+select pg_temp.check((select count(*) from notebooks) = 0 and (select count(*) from notes) = 0, 'partager un journal ne donne pas accès aux notes');
+select pg_temp.check((select count(*) from profiles where id = '44444444-4444-4444-4444-444444444444') = 0, 'Léa ne voit pas le profil de Sami');
+
+-- Suppression du compte de Nassim : Sami hérite du carnet de cours, la séance reste
+reset role;
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+select prepare_account_deletion();
+reset role;
+delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
+select pg_temp.check((select owner_id from notebooks where id = 'bbbbbbbb-0000-0000-0000-000000000002') = '44444444-4444-4444-4444-444444444444', 'Sami hérite du carnet de cours');
+select pg_temp.check((select count(*) from notes where id = 'cccccccc-0000-0000-0000-000000000002') = 1, 'la séance commune survit, sans autrice');
+select pg_temp.check((select count(*) from notebooks where id = 'bbbbbbbb-0000-0000-0000-000000000001') = 0, 'le carnet perso disparaît avec le compte');
+select pg_temp.check((select count(*) from note_blocks where id = 'dddddddd-0000-0000-0000-000000000001') = 1, 'les passages de Sami restent');
+reset role;
+\echo 'Tests des Notes : ok.'

@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { LegalFooter } from "@/components/LegalPage";
 import { MenuLinks, SettingsLink } from "@/components/MenuLinks";
-import { IconJournaux, IconReglages, IconSoleil } from "@/components/icons";
+import { IconCoche, IconJournaux, IconNotes, IconReglages, IconSoleil } from "@/components/icons";
 
 /** Écrans de navigation (journaux, rejoindre, compte) : barre latérale des maquettes. */
 export default function MenuLayout({ children }: LayoutProps<"/">) {
@@ -35,6 +35,12 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
         </Link>
         <Link href="/journaux" aria-label="Journaux" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
           <IconJournaux />
+        </Link>
+        <Link href="/organiser" aria-label="Organiser" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
+          <IconCoche />
+        </Link>
+        <Link href="/notes" aria-label="Notes" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
+          <IconNotes />
         </Link>
         <Link href="/compte" aria-label="Réglages" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
           <IconReglages />

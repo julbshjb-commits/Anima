@@ -27,7 +27,7 @@ export function JoinForm() {
       )}
       <div>
         <button type="submit" className={btn} disabled={pending}>
-          {pending ? "Vérification…" : "Rejoindre le journal"}
+          {pending ? "Vérification…" : "Rejoindre"}
         </button>
       </div>
     </form>
