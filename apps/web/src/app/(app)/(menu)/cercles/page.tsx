@@ -21,6 +21,7 @@ import {
   InviteToCircle,
   LiveCircles,
   NewCircle,
+  SaveQuote,
 } from "./Forms";
 
 export const metadata: Metadata = { title: "Cercles" };
@@ -365,6 +366,7 @@ function Post({
           </ReactBtn>
         )}
         <span className="flex-1" />
+        {post.quote_text && <SaveQuote postId={post.id} />}
         {comments.length > 0 && (
           <span className="text-[13px] text-doux">
             {comments.length} commentaire{comments.length > 1 ? "s" : ""}

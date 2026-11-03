@@ -197,6 +197,31 @@ export type CirclePost = {
 export type CircleReaction = { post_id: string; circle_id: string; user_id: string; kind: "coeur" | "jensuis"; created_at: Timestamp };
 export type CircleComment = { id: string; post_id: string; circle_id: string; author_id: string; body: string; created_at: Timestamp };
 
+export type WorkKind = "livre" | "film" | "serie" | "podcast" | "article";
+export type WorkStatus = "a-lire" | "en-cours" | "termine";
+
+export type Work = {
+  id: string;
+  owner_id: string;
+  kind: WorkKind;
+  title: string;
+  creator: string | null;
+  cover: string;
+  status: WorkStatus;
+  progress: number | null;
+  progress_total: number | null;
+  rating: number | null;
+  started_on: string | null;
+  finished_on: string | null;
+  url: string | null;
+  note: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type Quote = { id: string; owner_id: string; work_id: string | null; text: string; source: string | null; created_at: Timestamp };
+export type ReadingGoal = { owner_id: string; year: number; target: number };
+
 export type Database = {
   public: {
     Tables: {
@@ -264,6 +289,9 @@ export type Database = {
       circle_reactions: Table<CircleReaction, { post_id: string; circle_id: string; kind: "coeur" | "jensuis" }>;
       circle_comments: Table<CircleComment, { post_id: string; circle_id: string; body: string }>;
       circle_invites: Table<{ id: string; circle_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
+      works: Table<Work, Partial<Omit<Work, "id" | "owner_id" | "created_at" | "updated_at">> & { title: string }>;
+      quotes: Table<Quote, { work_id?: string | null; text: string; source?: string | null }>;
+      reading_goals: Table<ReadingGoal, { year: number; target: number }>;
       notebook_invites: Table<{ id: string; notebook_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
     };
     Views: Record<never, never>;

@@ -196,3 +196,25 @@ export async function deleteCircle(form: FormData) {
   revalidatePath("/cercles");
   redirect("/cercles");
 }
+
+/** « Enregistrer dans ma bibliothèque » : copie la citation d'une publication dans mes citations. */
+export async function saveQuoteFromPost(
+  _: CercleState,
+  form: FormData,
+): Promise<CercleState> {
+  const { supabase } = await requireUser();
+  const postId = uuid(form.get("postId"));
+  if (!postId) return { error: "Publication introuvable." };
+  const { data: post } = await supabase
+    .from("circle_posts")
+    .select("quote_text, quote_source")
+    .eq("id", postId)
+    .maybeSingle();
+  if (!post?.quote_text) return { error: "Citation introuvable." };
+  const { error } = await supabase
+    .from("quotes")
+    .insert({ text: post.quote_text, source: post.quote_source });
+  if (error) return { error: "La citation n'a pas pu être gardée." };
+  revalidatePath("/bibliotheque");
+  return { ok: Date.now() };
+}

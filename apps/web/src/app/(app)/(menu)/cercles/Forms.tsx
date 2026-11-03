@@ -9,6 +9,7 @@ import {
   createCircleInvite,
   markSeen,
   publish,
+  saveQuoteFromPost,
   type CercleState,
 } from "./actions";
 
@@ -365,4 +366,28 @@ export function LiveCircles({ circleId }: { circleId: string | null }) {
     };
   }, [circleId, router]);
   return null;
+}
+
+export function SaveQuote({ postId }: { postId: string }) {
+  const [state, action, pending] = useActionState<CercleState, FormData>(
+    saveQuoteFromPost,
+    {},
+  );
+  if (state.ok)
+    return (
+      <span className="text-[13px] text-doux">Gardée dans ta bibliothèque</span>
+    );
+  return (
+    <form action={action} className="flex items-center gap-2">
+      <input type="hidden" name="postId" value={postId} />
+      <button
+        type="submit"
+        disabled={pending}
+        className="text-[13px] text-doux hover:text-noir disabled:opacity-50"
+      >
+        Enregistrer dans ma bibliothèque
+      </button>
+      {state.error && <span className="text-xs text-terre">{state.error}</span>}
+    </form>
+  );
 }

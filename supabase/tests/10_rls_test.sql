@@ -385,3 +385,33 @@ delete from auth.users where id = '44444444-4444-4444-4444-444444444444';
 select pg_temp.check((select owner_id from circles where id = 'ffffffff-0000-0000-0000-000000000001') = '22222222-2222-2222-2222-222222222222', 'Léa hérite du cercle');
 reset role;
 \echo 'Tests des Cercles : ok.'
+
+-- ---------------------------------------------------------------------
+-- Bibliothèque : tout est personnel
+-- ---------------------------------------------------------------------
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+insert into works (id, title, creator, status, progress, progress_total) values
+  ('abcdabcd-0000-0000-0000-000000000001', 'Les Années', 'Annie Ernaux', 'en-cours', 158, 254);
+insert into quotes (work_id, text, source) values ('abcdabcd-0000-0000-0000-000000000001', 'Sauver quelque chose du temps où l''on ne sera plus jamais.', 'p. 254');
+insert into reading_goals (year, target) values (2026, 24);
+do $$ begin
+  update works set progress = 300 where id = 'abcdabcd-0000-0000-0000-000000000001';
+  raise exception 'ÉCHEC : page au-delà du total';
+exception when check_violation then raise notice 'ok  la page lue ne dépasse pas le total';
+end $$;
+
+reset role;
+select pg_temp.as_user('55555555-5555-5555-5555-555555555555');
+select pg_temp.check((select count(*) from works) = 0 and (select count(*) from quotes) = 0 and (select count(*) from reading_goals) = 0, 'Maxime ne voit pas la bibliothèque de Léa');
+do $$ begin
+  insert into quotes (work_id, text) values ('abcdabcd-0000-0000-0000-000000000001', 'Intrus');
+  raise exception 'ÉCHEC : citation rattachée à l''œuvre d''autrui';
+exception when insufficient_privilege then raise notice 'ok  impossible de rattacher une citation à l''œuvre d''autrui';
+end $$;
+update works set title = 'Piraté' where id = 'abcdabcd-0000-0000-0000-000000000001';
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+select pg_temp.check((select title from works where id = 'abcdabcd-0000-0000-0000-000000000001') = 'Les Années', 'l''œuvre de Léa est intacte');
+reset role;
+\echo 'Tests de la Bibliothèque : ok.'

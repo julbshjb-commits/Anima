@@ -3,7 +3,7 @@ import {
   createJournalSchema, entrySchema, formatInviteCode, isValidInviteCode,
   monthGrid, normalizeInviteCode, toIsoDate,
 } from "./index";
-import { notebookSchema, parseTags, postSchema, seanceToText } from "./index";
+import { notebookSchema, parseTags, postSchema, progressPercent, quoteSchema, seanceToText, workSchema } from "./index";
 
 describe("codes d'invitation", () => {
   it("normalise la saisie", () => {
@@ -125,5 +125,21 @@ describe("cercles", () => {
     expect(postSchema.safeParse({ kind: "mot", body: "  " }).success).toBe(false);
     expect(postSchema.safeParse({ kind: "evenement", eventTitle: "Fête" }).success).toBe(false);
     expect(postSchema.safeParse({ kind: "citation", quoteText: "Chaque homme…", quoteSource: "Montaigne" }).success).toBe(true);
+  });
+});
+
+describe("bibliothèque", () => {
+  it("valide une œuvre saisie dans un formulaire", () => {
+    const w = workSchema.parse({ title: "Les Années", creator: "Annie Ernaux", progress: "158", progress_total: "254", rating: "", url: "" });
+    expect(w).toMatchObject({ kind: "livre", progress: 158, progress_total: 254, rating: null, url: null, creator: "Annie Ernaux" });
+    expect(workSchema.safeParse({ title: "X", progress: "300", progress_total: "254" }).success).toBe(false);
+    expect(workSchema.safeParse({ title: "X", url: "javascript:alert(1)" }).success).toBe(false);
+  });
+  it("retire les guillemets d'une citation collée", () => {
+    expect(quoteSchema.parse({ text: "« On ne voit bien qu'avec le cœur. »", source: "" })).toEqual({ text: "On ne voit bien qu'avec le cœur.", source: null });
+  });
+  it("calcule l'avancement", () => {
+    expect(progressPercent(158, 254)).toBe(62);
+    expect(progressPercent(10, null)).toBeNull();
   });
 });

@@ -113,3 +113,8 @@ export const IconCoeur = ({ filled, ...p }: P & { filled?: boolean }) => (
     <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
   </svg>
 );
+export const IconBibliotheque = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 4h3v16H4zM9 4h3v16H9zM14.5 4.6l2.9-.8 3.6 15.6-2.9.8z" />
+  </Svg>
+);
