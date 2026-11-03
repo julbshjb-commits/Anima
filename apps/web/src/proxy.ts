@@ -43,7 +43,7 @@ export async function proxy(request: NextRequest) {
   }
   if (signedIn && (pathname === "/" || pathname === "/connexion")) {
     const to = request.nextUrl.clone();
-    to.pathname = "/journaux";
+    to.pathname = "/aujourdhui";
     to.search = "";
     return NextResponse.redirect(to);
   }

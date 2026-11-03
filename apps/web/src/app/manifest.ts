@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Anima",
     description: "Ton journal intime et vos journaux partagés. Privé par défaut, hébergé en Europe.",
     lang: "fr",
-    start_url: "/journaux",
+    start_url: "/aujourdhui",
     display: "standalone",
     background_color: "#F5F3EE",
     theme_color: "#151515",

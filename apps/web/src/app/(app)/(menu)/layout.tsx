@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { LegalFooter } from "@/components/LegalPage";
 import { MenuLinks, SettingsLink } from "@/components/MenuLinks";
-import { IconJournaux, IconReglages } from "@/components/icons";
+import { IconJournaux, IconReglages, IconSoleil } from "@/components/icons";
 
 /** Écrans de navigation (journaux, rejoindre, compte) : barre latérale des maquettes. */
 export default function MenuLayout({ children }: LayoutProps<"/">) {
@@ -14,7 +14,7 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
         aria-label="Navigation principale"
         className="hidden lg:flex w-[264px] shrink-0 sticky top-0 h-dvh flex-col gap-7 px-5 py-7 border-r border-trait"
       >
-        <Link href="/journaux" className="titre text-[30px] leading-none px-2.5">
+        <Link href="/aujourdhui" className="titre text-[30px] leading-none px-2.5">
           Anima
         </Link>
         <MenuLinks />
@@ -27,8 +27,11 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
       </nav>
 
       <header className="lg:hidden sticky top-0 z-10 h-14 px-4 flex items-center gap-2 border-b border-trait bg-fond/90 backdrop-blur">
-        <Link href="/journaux" className="titre text-2xl mr-auto">
+        <Link href="/aujourdhui" className="titre text-2xl mr-auto">
           Anima
+        </Link>
+        <Link href="/aujourdhui" aria-label="Aujourd'hui" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
+          <IconSoleil />
         </Link>
         <Link href="/journaux" aria-label="Journaux" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
           <IconJournaux />
