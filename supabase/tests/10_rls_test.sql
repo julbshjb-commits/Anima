@@ -317,3 +317,71 @@ select pg_temp.check((select count(*) from notebooks where id = 'bbbbbbbb-0000-0
 select pg_temp.check((select count(*) from note_blocks where id = 'dddddddd-0000-0000-0000-000000000001') = 1, 'les passages de Sami restent');
 reset role;
 \echo 'Tests des Notes : ok.'
+
+-- ---------------------------------------------------------------------
+-- Cercles : on n'entre que par code, tout reste dans le cercle
+-- ---------------------------------------------------------------------
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('55555555-5555-5555-5555-555555555555', 'maxime@example.org', '{"display_name":"Maxime"}');
+
+select pg_temp.as_user('44444444-4444-4444-4444-444444444444');
+insert into circles (id, name) values ('ffffffff-0000-0000-0000-000000000001', 'Les copains de prépa');
+insert into circle_posts (id, circle_id, body, event_title, event_day, event_end_day) values
+  ('ffffffff-0000-0000-0000-0000000000a1', 'ffffffff-0000-0000-0000-000000000001', 'Qui est chaud pour Strasbourg ?', 'Week-end à Strasbourg', '2026-12-12', '2026-12-13');
+select pg_temp.check((select role from circle_members where circle_id = 'ffffffff-0000-0000-0000-000000000001' and user_id = auth.uid()) = 'owner', 'la créatrice d''un cercle en est propriétaire');
+create temp table circle_code as select code from create_circle_invite('ffffffff-0000-0000-0000-000000000001');
+grant select on circle_code to authenticated;
+
+-- Léa ne voit rien sans le code, ne peut ni réagir ni commenter
+reset role;
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+select pg_temp.check((select count(*) from circles) = 0 and (select count(*) from circle_posts) = 0, 'sans code, Léa ne voit ni le cercle ni ses publications');
+do $$ begin
+  insert into circle_comments (post_id, circle_id, body) values ('ffffffff-0000-0000-0000-0000000000a1', 'ffffffff-0000-0000-0000-000000000001', 'Intruse');
+  raise exception 'ÉCHEC : commentaire hors du cercle';
+exception when insufficient_privilege then raise notice 'ok  impossible de commenter sans être membre';
+end $$;
+do $$ begin
+  insert into events (title, starts_at, circle_post_id) values ('Copie', now(), 'ffffffff-0000-0000-0000-0000000000a1');
+  raise exception 'ÉCHEC : événement copié hors du cercle';
+exception when insufficient_privilege then raise notice 'ok  impossible de copier l''événement d''un cercle dont on n''est pas membre';
+end $$;
+
+-- Léa rejoint avec le code
+select pg_temp.check((join_with_code((select code from circle_code)) ->> 'type') = 'cercle', 'le code fait rejoindre le cercle');
+select pg_temp.check((select count(*) from circle_posts) = 1, 'Léa voit la publication du cercle');
+insert into circle_reactions (post_id, circle_id, kind) values ('ffffffff-0000-0000-0000-0000000000a1', 'ffffffff-0000-0000-0000-000000000001', 'jensuis');
+insert into circle_comments (id, post_id, circle_id, body) values ('ffffffff-0000-0000-0000-0000000000c1', 'ffffffff-0000-0000-0000-0000000000a1', 'ffffffff-0000-0000-0000-000000000001', 'Je prends les billets');
+insert into events (title, starts_at, circle_post_id) values ('Week-end à Strasbourg', '2026-12-12 09:00+01', 'ffffffff-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from events where circle_post_id is not null) = 1, 'Léa ajoute l''événement à son agenda');
+-- Léa ne modifie pas la publication de Sami
+update circle_posts set body = 'Piraté' where id = 'ffffffff-0000-0000-0000-0000000000a1';
+-- Ni ne retire Sami du cercle
+delete from circle_members where user_id = '44444444-4444-4444-4444-444444444444';
+
+reset role;
+select pg_temp.as_user('44444444-4444-4444-4444-444444444444');
+select pg_temp.check((select body from circle_posts where id = 'ffffffff-0000-0000-0000-0000000000a1') = 'Qui est chaud pour Strasbourg ?', 'un membre ne modifie pas la publication d''un autre');
+select pg_temp.check((select count(*) from circle_members where circle_id = 'ffffffff-0000-0000-0000-000000000001') = 2, 'un membre ne retire personne du cercle');
+select pg_temp.check((select count(*) from events) = 0, 'l''agenda de Léa reste à Léa');
+select pg_temp.check((select display_name from profiles where id = '22222222-2222-2222-2222-222222222222') = 'Léa', 'les membres d''un cercle voient le nom des autres');
+-- La créatrice modère : elle peut retirer le commentaire de Léa
+delete from circle_comments where id = 'ffffffff-0000-0000-0000-0000000000c1';
+select pg_temp.check((select count(*) from circle_comments) = 0, 'la créatrice du cercle peut retirer un commentaire');
+
+-- Maxime, hors du cercle, ne voit pas le profil de Léa
+reset role;
+select pg_temp.as_user('55555555-5555-5555-5555-555555555555');
+select pg_temp.check((select count(*) from profiles where id = '22222222-2222-2222-2222-222222222222') = 0, 'hors du cercle, on ne voit pas les profils des membres');
+select pg_temp.check((select count(*) from circle_reactions) = 0, 'hors du cercle, on ne voit pas les réactions');
+
+-- Suppression du compte de Sami : Léa hérite du cercle
+reset role;
+select pg_temp.as_user('44444444-4444-4444-4444-444444444444');
+select prepare_account_deletion();
+reset role;
+delete from auth.users where id = '44444444-4444-4444-4444-444444444444';
+select pg_temp.check((select owner_id from circles where id = 'ffffffff-0000-0000-0000-000000000001') = '22222222-2222-2222-2222-222222222222', 'Léa hérite du cercle');
+reset role;
+\echo 'Tests des Cercles : ok.'

@@ -3,7 +3,7 @@ import {
   createJournalSchema, entrySchema, formatInviteCode, isValidInviteCode,
   monthGrid, normalizeInviteCode, toIsoDate,
 } from "./index";
-import { notebookSchema, parseTags, seanceToText } from "./index";
+import { notebookSchema, parseTags, postSchema, seanceToText } from "./index";
 
 describe("codes d'invitation", () => {
   it("normalise la saisie", () => {
@@ -113,5 +113,17 @@ describe("notes", () => {
     expect(seanceToText([{ kind: "texte", content: "I. A priori", author: "Nassim" }, { kind: "question", content: "QPC ?", author: "Inès" }])).toBe(
       "I. A priori\n— Nassim\n\nQuestion (Inès) : QPC ?",
     );
+  });
+});
+
+describe("cercles", () => {
+  it("garde seulement les champs du type choisi", () => {
+    const p = postSchema.parse({ kind: "evenement", body: "Qui vient ?", eventTitle: "Strasbourg", eventDay: "2026-12-12", quoteText: "ignorée" });
+    expect(p).toMatchObject({ body: "Qui vient ?", event_title: "Strasbourg", event_day: "2026-12-12", quote_text: null });
+  });
+  it("refuse une publication vide ou un événement sans jour", () => {
+    expect(postSchema.safeParse({ kind: "mot", body: "  " }).success).toBe(false);
+    expect(postSchema.safeParse({ kind: "evenement", eventTitle: "Fête" }).success).toBe(false);
+    expect(postSchema.safeParse({ kind: "citation", quoteText: "Chaque homme…", quoteSource: "Montaigne" }).success).toBe(true);
   });
 });
