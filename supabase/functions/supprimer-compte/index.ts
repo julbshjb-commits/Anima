@@ -46,6 +46,13 @@ Deno.serve(async (req) => {
     await admin.storage.from("attachments").remove(paths.slice(i, i + 100));
   }
 
+  for (;;) {
+    const { data: objects } = await admin.storage.from("fichiers").list(user.id, { limit: 100 });
+    if (!objects?.length) break;
+    const { error: rmErr } = await admin.storage.from("fichiers").remove(objects.map((o: { name: string }) => `${user.id}/${o.name}`));
+    if (rmErr) return json({ error: "delete_failed" }, 500);
+  }
+
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) return json({ error: "delete_failed" }, 500);
   return json({ ok: true });

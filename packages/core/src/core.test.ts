@@ -3,6 +3,7 @@ import {
   createJournalSchema, entrySchema, formatInviteCode, isValidInviteCode,
   monthGrid, normalizeInviteCode, toIsoDate,
 } from "./index";
+import { checkUpload, filePath, folderNameSchema, formatBytes } from "./index";
 import { notebookSchema, parseTags, postSchema, progressPercent, quoteSchema, seanceToText, workSchema } from "./index";
 
 describe("codes d'invitation", () => {
@@ -141,5 +142,27 @@ describe("bibliothèque", () => {
   it("calcule l'avancement", () => {
     expect(progressPercent(158, 254)).toBe(62);
     expect(progressPercent(10, null)).toBeNull();
+  });
+});
+
+describe("fichiers", () => {
+  it("affiche les tailles en unités françaises", () => {
+    expect(formatBytes(512)).toBe("512 o");
+    expect(formatBytes(86 * 1024)).toBe("86 Ko");
+    expect(formatBytes(2.4 * 1024 * 1024)).toBe("2,4 Mo");
+    expect(formatBytes(3.2 * 1024 ** 3)).toBe("3,2 Go");
+    expect(formatBytes(1024 * 1024)).toBe("1 Mo");
+  });
+  it("range le fichier dans le dossier de sa propriétaire", () => {
+    expect(filePath("u1", "f1", "application/pdf")).toBe("u1/f1.pdf");
+  });
+  it("refuse les types inconnus et les fichiers trop gros", () => {
+    expect(checkUpload({ name: "a.exe", size: 10, type: "application/x-msdownload" })).toMatch(/pas un type accepté/);
+    expect(checkUpload({ name: "a.pdf", size: 26 * 1024 * 1024, type: "application/pdf" })).toMatch(/25 Mo/);
+    expect(checkUpload({ name: "a.pdf", size: 10, type: "application/pdf" })).toBeNull();
+  });
+  it("nettoie les noms de dossier", () => {
+    expect(folderNameSchema.parse("  Cours / L2 ")).toBe("Cours L2");
+    expect(folderNameSchema.safeParse("   ").success).toBe(false);
   });
 });

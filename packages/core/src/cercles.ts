@@ -36,6 +36,8 @@ export const postSchema = z
     eventPlace: text(120),
     quoteText: text(1000),
     quoteSource: text(200),
+    /** Un fichier ou une photo est joint : le mot devient facultatif. */
+    hasFile: z.boolean().default(false),
   })
   .superRefine((p, ctx) => {
     if (p.kind === "evenement") {
@@ -45,7 +47,7 @@ export const postSchema = z
         ctx.addIssue({ code: "custom", message: "La fin doit être après le début.", path: ["eventEndDay"] });
     } else if (p.kind === "citation") {
       if (!p.quoteText) ctx.addIssue({ code: "custom", message: "Écris la citation.", path: ["quoteText"] });
-    } else if (!p.body) ctx.addIssue({ code: "custom", message: "Écris quelque chose à partager.", path: ["body"] });
+    } else if (!p.body && !p.hasFile) ctx.addIssue({ code: "custom", message: "Écris quelque chose à partager.", path: ["body"] });
   })
   .transform((p) => ({
     body: p.body,
