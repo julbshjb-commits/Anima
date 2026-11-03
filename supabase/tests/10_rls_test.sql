@@ -158,5 +158,14 @@ select pg_temp.check(
    where j.title = 'Carnet d''Ève' and m.user_id = '11111111-1111-1111-1111-111111111111') = 'owner',
   'Nassim devient propriétaire dans la liste des membres');
 
+-- Sans être connecté, aucune fonction n'est appelable
+reset role;
+set role anon;
+do $$ begin
+  perform public.is_journal_member('aaaaaaaa-0000-0000-0000-000000000001');
+  raise exception 'ÉCHEC : anon peut appeler une fonction';
+exception when insufficient_privilege then raise notice 'ok  sans session, les fonctions sont fermées';
+end $$;
+
 reset role;
 \echo 'Tous les tests de règles d''accès passent.'
