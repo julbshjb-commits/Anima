@@ -14,6 +14,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: { default: "Anima", template: "%s · Anima" },
   description: "Ton journal intime et vos journaux partagés. Privé par défaut, hébergé en Europe.",
+  appleWebApp: { capable: true, title: "Anima", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

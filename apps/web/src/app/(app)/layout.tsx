@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabaseEnv } from "@/lib/env";
 import { NotConfigured } from "@/components/NotConfigured";
+import { LegalFooter } from "@/components/LegalPage";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   if (!supabaseEnv()) return <NotConfigured />;
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         </nav>
       </header>
       <div className="flex-1">{children}</div>
+      <LegalFooter />
     </div>
   );
 }

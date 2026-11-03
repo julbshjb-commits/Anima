@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { btn } from "@/components/ui";
+import { LegalFooter } from "@/components/LegalPage";
 
 export default function Accueil() {
   return (
@@ -27,7 +28,7 @@ export default function Accueil() {
           </Link>
         </div>
       </section>
-      <footer className="px-6 md:px-12 py-8 text-xs text-doux">Anima · données hébergées dans l'Union européenne</footer>
+      <LegalFooter />
     </main>
   );
 }

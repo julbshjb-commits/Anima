@@ -78,3 +78,22 @@ body {
   text-transform: uppercase;
   color: var(--texte-doux);
 }
+
+/* Pages légales : titres et listes lisibles sans surcharger le design. */
+.legal h2 {
+  font-family: var(--font-serif);
+  font-size: 1.875rem;
+  line-height: 1.15;
+  margin-top: 1.5rem;
+}
+.legal ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.legal a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
