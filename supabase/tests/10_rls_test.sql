@@ -99,6 +99,24 @@ update journal_entries set content_text = 'modifié' where id = 'eeeeeeee-0000-0
 reset role;
 select pg_temp.check((select content_text from journal_entries where id = 'eeeeeeee-0000-0000-0000-000000000001') = 'Le pain du dimanche', 'Léa ne peut pas modifier l''entrée de Nassim');
 select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+delete from journal_entries where id = 'eeeeeeee-0000-0000-0000-000000000001';
+reset role;
+select pg_temp.check(exists (select 1 from journal_entries where id = 'eeeeeeee-0000-0000-0000-000000000001'), 'Léa ne peut pas supprimer l''entrée de Nassim');
+
+-- Léa modifie puis supprime sa propre entrée
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+do $$ declare v uuid; begin
+  update journal_entries set content_text = 'La soupe sauvée', mood = 'lumineux'
+  where content_text = 'La soupe ratée' returning id into v;
+  if v is null then raise exception 'ÉCHEC : Léa ne peut pas modifier son entrée'; end if;
+  raise notice 'ok  Léa modifie sa propre entrée';
+  delete from journal_entries where id = v;
+  if exists (select 1 from journal_entries where id = v) then raise exception 'ÉCHEC : entrée non supprimée'; end if;
+  raise notice 'ok  Léa supprime sa propre entrée';
+end $$;
+reset role;
+select pg_temp.check(not exists (select 1 from journal_entries where content_text = 'La soupe sauvée'), 'l''entrée supprimée a vraiment disparu de la base');
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
 update journals set title = 'Renommé' where id = 'aaaaaaaa-0000-0000-0000-000000000001';
 reset role;
 select pg_temp.check((select title from journals where id = 'aaaaaaaa-0000-0000-0000-000000000001') = 'Nous deux', 'seul le propriétaire renomme le journal');

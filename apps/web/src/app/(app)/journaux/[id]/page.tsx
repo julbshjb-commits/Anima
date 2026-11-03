@@ -152,6 +152,11 @@ async function Journal({ params, searchParams }: PageProps<"/journaux/[id]">) {
                   <span>{formatLongDate(e.entry_date)}</span>
                   {!isIntime && <span>· {e.author_id === user.id ? "toi" : (nameOf.get(e.author_id) ?? "un ancien membre")}</span>}
                   {e.mood && <span className="ml-auto">{MOOD_META[e.mood].label}</span>}
+                  {canWrite && e.author_id === user.id && (
+                    <Link href={`/journaux/${journal.id}/entree/${e.id}`} className={`${e.mood ? "" : "ml-auto "}hover:underline underline-offset-4`}>
+                      Modifier
+                    </Link>
+                  )}
                 </header>
                 {e.title && <h2 className="titre text-3xl">{e.title}</h2>}
                 <p className="whitespace-pre-wrap leading-relaxed">{e.content_text}</p>
