@@ -10,9 +10,14 @@ export async function joinWithCode(_prev: JoinState, form: FormData): Promise<Jo
   const raw = String(form.get("code") ?? "");
   if (!isValidInviteCode(raw)) return { error: "Un code fait 6 caractères, par exemple K7M-Q2P." };
   const { supabase } = await requireUser();
-  const { data, error } = await supabase.rpc("join_journal_with_code", { p_code: normalizeInviteCode(raw) });
+  // Un même code peut ouvrir un journal partagé ou un carnet de cours.
+  const { data, error } = await supabase.rpc("join_with_code", { p_code: normalizeInviteCode(raw) });
   if (error?.code === "54000") return { error: "Trop d'essais. Réessaie dans une heure." };
   if (error || !data) return { error: "Ce code n'existe pas, a expiré ou a été désactivé." };
+  if (data.type === "carnet") {
+    revalidatePath("/notes");
+    redirect(`/notes/cours/${data.id}`);
+  }
   revalidatePath("/journaux");
-  redirect(`/journaux/${data}`);
+  redirect(`/journaux/${data.id}`);
 }

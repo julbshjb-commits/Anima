@@ -3,6 +3,7 @@ import {
   createJournalSchema, entrySchema, formatInviteCode, isValidInviteCode,
   monthGrid, normalizeInviteCode, toIsoDate,
 } from "./index";
+import { notebookSchema, parseTags, seanceToText } from "./index";
 
 describe("codes d'invitation", () => {
   it("normalise la saisie", () => {
@@ -96,5 +97,21 @@ describe("fuseau de Paris", () => {
     expect(zonedToIso("2026-11-03", "14:00")).toBe("2026-11-03T13:00:00.000Z");
     expect(zonedToIso("2026-07-01", "14:00")).toBe("2026-07-01T12:00:00.000Z");
     expect(zonedParts("2026-11-03T23:30:00.000Z")).toEqual({ day: "2026-11-04", time: "00:30" });
+  });
+});
+
+describe("notes", () => {
+  it("lit les tags saisis librement", () => {
+    expect(parseTags("#partiels, schéma  #à-revoir #Partiels")).toEqual(["partiels", "schéma", "à-revoir"]);
+    expect(parseTags("")).toEqual([]);
+  });
+  it("valide un carnet et refuse une couverture inconnue", () => {
+    expect(notebookSchema.parse({ title: " Droit ", kind: "cours", subtitle: "" })).toMatchObject({ title: "Droit", subtitle: null, cover: "nature-sauge" });
+    expect(notebookSchema.safeParse({ title: "X", cover: "pirate" }).success).toBe(false);
+  });
+  it("met une séance en texte", () => {
+    expect(seanceToText([{ kind: "texte", content: "I. A priori", author: "Nassim" }, { kind: "question", content: "QPC ?", author: "Inès" }])).toBe(
+      "I. A priori\n— Nassim\n\nQuestion (Inès) : QPC ?",
+    );
   });
 });
