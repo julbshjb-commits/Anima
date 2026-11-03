@@ -3,6 +3,7 @@ import {
   createJournalSchema, entrySchema, formatInviteCode, isValidInviteCode,
   monthGrid, normalizeInviteCode, toIsoDate,
 } from "./index";
+import { notebookSchema, parseTags, seanceToText } from "./index";
 
 describe("codes d'invitation", () => {
   it("normalise la saisie", () => {
@@ -58,5 +59,59 @@ describe("photoPath", () => {
     const { photoPath } = await import("./photos");
     expect(photoPath("j1", "e1", "f1", "image/png")).toBe("j1/e1/f1.png");
     expect(photoPath("j1", "e1", "f1", "image/inconnu")).toBe("j1/e1/f1.jpg");
+  });
+});
+
+describe("organiser", () => {
+  // Mardi 3 novembre 2026, 10 h.
+  const now = new Date(2026, 10, 3, 10, 0);
+
+  it("comprend « demain 18 h »", async () => {
+    const { parseQuickTask } = await import("./organiser");
+    expect(parseQuickTask("appeler maman demain 18 h", now)).toEqual({ title: "Appeler maman", dueDate: "2026-11-04", dueTime: "18:00" });
+  });
+
+  it("comprend un jour de la semaine et 18h30", async () => {
+    const { parseQuickTask } = await import("./organiser");
+    expect(parseQuickTask("Réviser l'éco vendredi 18h30", now)).toEqual({ title: "Réviser l'éco", dueDate: "2026-11-06", dueTime: "18:30" });
+    // « mardi » un mardi = la semaine prochaine
+    expect(parseQuickTask("sport mardi", now).dueDate).toBe("2026-11-10");
+  });
+
+  it("laisse une tâche sans date telle quelle", async () => {
+    const { parseQuickTask } = await import("./organiser");
+    expect(parseQuickTask("racheter de la lessive", now)).toEqual({ title: "Racheter de la lessive", dueDate: null, dueTime: null });
+  });
+
+  it("refuse une heure sans jour et une fin avant le début", async () => {
+    const { taskSchema, eventSchema } = await import("./organiser");
+    expect(taskSchema.safeParse({ title: "x", dueTime: "18:00" }).success).toBe(false);
+    expect(eventSchema.safeParse({ title: "Cours", day: "2026-11-03", start: "10:00", end: "09:00" }).success).toBe(false);
+    expect(eventSchema.safeParse({ title: "Cours", day: "2026-11-03", start: "09:00", end: "10:30" }).success).toBe(true);
+  });
+});
+
+describe("fuseau de Paris", () => {
+  it("convertit l'heure locale en UTC, été comme hiver", async () => {
+    const { zonedToIso, zonedParts } = await import("./dates");
+    expect(zonedToIso("2026-11-03", "14:00")).toBe("2026-11-03T13:00:00.000Z");
+    expect(zonedToIso("2026-07-01", "14:00")).toBe("2026-07-01T12:00:00.000Z");
+    expect(zonedParts("2026-11-03T23:30:00.000Z")).toEqual({ day: "2026-11-04", time: "00:30" });
+  });
+});
+
+describe("notes", () => {
+  it("lit les tags saisis librement", () => {
+    expect(parseTags("#partiels, schéma  #à-revoir #Partiels")).toEqual(["partiels", "schéma", "à-revoir"]);
+    expect(parseTags("")).toEqual([]);
+  });
+  it("valide un carnet et refuse une couverture inconnue", () => {
+    expect(notebookSchema.parse({ title: " Droit ", kind: "cours", subtitle: "" })).toMatchObject({ title: "Droit", subtitle: null, cover: "nature-sauge" });
+    expect(notebookSchema.safeParse({ title: "X", cover: "pirate" }).success).toBe(false);
+  });
+  it("met une séance en texte", () => {
+    expect(seanceToText([{ kind: "texte", content: "I. A priori", author: "Nassim" }, { kind: "question", content: "QPC ?", author: "Inès" }])).toBe(
+      "I. A priori\n— Nassim\n\nQuestion (Inès) : QPC ?",
+    );
   });
 });

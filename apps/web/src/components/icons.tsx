@@ -78,3 +78,20 @@ export const IconSoleil = (p: P) => (
     <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
   </Svg>
 );
+export const IconCoche = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="3" />
+    <path d="m8 12 3 3 5-6" />
+  </Svg>
+);
+export const IconNotes = (p: P) => (
+  <Svg {...p}>
+    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+    <path d="M14 3v6h6M8 13h8M8 17h5" />
+  </Svg>
+);
+export const IconCheck = (p: P) => (
+  <Svg {...p}>
+    <path d="m5 12 5 5 9-10" />
+  </Svg>
+);
