@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { MOOD_META, parseIsoDate } from "@anima/core";
+import { MOOD_META, fileType, formatBytes, isImage, parseIsoDate } from "@anima/core";
 import { getCercles, type CerclesData } from "@/lib/cercles";
 import type { CirclePost } from "@/lib/database.types";
 import { MONTHS, relativeTime } from "@/lib/format";
@@ -126,6 +126,7 @@ async function Cercles({ searchParams }: PageProps<"/cercles">) {
           </div>
         ) : (
           <Composer
+            userId={data.userId}
             circles={data.circles.map((c) => ({ id: c.id, name: c.name }))}
             defaultCircle={current?.id}
           />
@@ -307,6 +308,8 @@ function Post({
         </p>
       )}
 
+      {post.file_id && <Attachment id={post.file_id} files={data.files} />}
+
       {post.event_title && post.event_day && (
         <div className="rounded-xl border border-noir/10 px-4 py-3 flex flex-wrap items-center gap-3">
           <IconCalendrier size={18} className="text-encre shrink-0" />
@@ -432,5 +435,43 @@ function ReactBtn({
         {children}
       </button>
     </form>
+  );
+}
+
+function Attachment({ id, files }: { id: string; files: CerclesData["files"] }) {
+  const f = files.get(id);
+  if (!f)
+    return (
+      <p className="text-[13px] text-doux">
+        Ce fichier n&apos;est plus partagé.
+      </p>
+    );
+  if (isImage(f.mime))
+    return (
+      <a href={`/fichiers/ouvrir/${id}`} target="_blank" rel="noopener" className="block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={f.url} alt={f.name} className="w-full max-h-[420px] object-cover rounded-xl bg-lin" />
+      </a>
+    );
+  const t = fileType(f.mime);
+  return (
+    <a
+      href={`/fichiers/ouvrir/${id}`}
+      target="_blank"
+      rel="noopener"
+      className="flex items-center gap-3 rounded-xl border border-noir/10 px-4 py-3 hover:bg-lin"
+    >
+      <span
+        aria-hidden
+        className="w-9 h-9 rounded-md grid place-items-center text-[9px] font-semibold text-casse shrink-0"
+        style={{ background: t.color }}
+      >
+        {t.badge}
+      </span>
+      <span className="flex-1 min-w-0 flex flex-col">
+        <span className="text-[15px] truncate">{f.name}</span>
+        <span className="text-xs text-doux">{formatBytes(f.size)}, ouvrir</span>
+      </span>
+    </a>
   );
 }

@@ -8,3 +8,4 @@ export type * from "./database.types";
 export * from "./notes";
 export * from "./cercles";
 export * from "./bibliotheque";
+export * from "./fichiers";

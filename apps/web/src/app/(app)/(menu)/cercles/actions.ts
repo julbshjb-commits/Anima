@@ -59,6 +59,7 @@ export async function publish(
     eventPlace: form.get("eventPlace") ?? "",
     quoteText: form.get("quoteText") ?? "",
     quoteSource: form.get("quoteSource") ?? "",
+    hasFile: !!uuid(form.get("fileId")),
   });
   if (!parsed.success)
     return {
@@ -66,7 +67,7 @@ export async function publish(
     };
   const { error } = await supabase
     .from("circle_posts")
-    .insert({ circle_id: circleId, ...parsed.data });
+    .insert({ circle_id: circleId, ...parsed.data, file_id: uuid(form.get("fileId")) });
   if (error)
     return { error: "La publication n'a pas pu être envoyée. Réessaie." };
   return ok();

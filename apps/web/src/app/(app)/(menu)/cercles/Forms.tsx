@@ -3,6 +3,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MOODS, MOOD_META, formatInviteCode } from "@anima/core";
 import { browserClient } from "@/lib/supabase/browser";
+import { AttachFile } from "@/components/AttachFile";
 import {
   comment,
   createCircle,
@@ -38,9 +39,11 @@ type Kind = "mot" | "evenement" | "citation";
 
 /** « Partage quelque chose avec un cercle… » : un mot, un événement ou une citation. */
 export function Composer({
+  userId,
   circles,
   defaultCircle,
 }: {
+  userId: string;
   circles: { id: string; name: string }[];
   defaultCircle?: string;
 }) {
@@ -135,6 +138,7 @@ export function Composer({
           />
         </div>
       )}
+      <AttachFile key={state.ok ?? 0} userId={userId} />
       <div className="flex flex-wrap items-center gap-2">
         <div
           className="flex p-1 rounded-full bg-lin text-[13px]"

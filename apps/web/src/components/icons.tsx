@@ -118,3 +118,51 @@ export const IconBibliotheque = (p: P) => (
     <path d="M4 4h3v16H4zM9 4h3v16H9zM14.5 4.6l2.9-.8 3.6 15.6-2.9.8z" />
   </Svg>
 );
+export const IconDossier = (p: P) => (
+  <Svg {...p}>
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </Svg>
+);
+export const IconImporter = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />
+  </Svg>
+);
+export const IconPartages = (p: P) => (
+  <Svg {...p}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5" />
+  </Svg>
+);
+export const IconHorloge = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Svg>
+);
+export const IconEtoile = ({ filled, ...p }: P & { filled?: boolean }) => (
+  <Svg {...p}>
+    <path
+      d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"
+      fill={filled ? "currentColor" : "none"}
+    />
+  </Svg>
+);
+export const IconCorbeille = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+  </Svg>
+);
+export const IconListe = (p: P) => (
+  <Svg {...p}>
+    <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+  </Svg>
+);
+export const IconGrille = (p: P) => (
+  <Svg {...p}>
+    <circle cx="7.5" cy="7.5" r="3" />
+    <circle cx="16.5" cy="7.5" r="3" />
+    <circle cx="7.5" cy="16.5" r="3" />
+    <circle cx="16.5" cy="16.5" r="3" />
+  </Svg>
+);

@@ -25,7 +25,7 @@ export async function signOut() {
 
 /**
  * Supprime le compte : transmet d'abord les journaux partagés, efface les
- * photos de l'utilisateur, puis supprime l'utilisateur (cascade en base).
+ * photos et les fichiers de l'utilisateur, puis supprime l'utilisateur (cascade en base).
  */
 export async function deleteAccount(_prev: SimpleState, form: FormData): Promise<SimpleState> {
   if (form.get("confirm") !== "SUPPRIMER") return { error: "Écris SUPPRIMER pour confirmer." };
@@ -40,6 +40,14 @@ export async function deleteAccount(_prev: SimpleState, form: FormData): Promise
   const paths = (files ?? []).map((f: { storage_path: string }) => f.storage_path);
   for (let i = 0; i < paths.length; i += 100) {
     await admin.storage.from("attachments").remove(paths.slice(i, i + 100));
+  }
+
+  // Fichiers du disque : tout le dossier {id}/ du bucket « fichiers ».
+  for (;;) {
+    const { data: objects } = await admin.storage.from("fichiers").list(user.id, { limit: 100 });
+    if (!objects?.length) break;
+    const { error: rmErr } = await admin.storage.from("fichiers").remove(objects.map((o) => `${user.id}/${o.name}`));
+    if (rmErr) return { error: "La suppression a échoué. Écris-nous si cela se reproduit." };
   }
 
   const { error } = await admin.auth.admin.deleteUser(user.id);
