@@ -17,7 +17,7 @@ export async function sendMagicLink(_prev: LinkState, form: FormData): Promise<L
 
   const h = await headers();
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
-  const next = parsed.data.suite && !parsed.data.suite.startsWith("//") ? parsed.data.suite : "/journaux";
+  const next = parsed.data.suite && !parsed.data.suite.startsWith("//") ? parsed.data.suite : "/aujourdhui";
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({

@@ -134,3 +134,17 @@ async function withPhotos(supabase: Client, entries: JournalEntry[]): Promise<En
       .map((a) => ({ id: a.id, url: urlByPath.get(a.storage_path)!, path: a.storage_path })),
   }));
 }
+
+/** Humeurs de mes propres entrées (tous journaux confondus) depuis une date, pour l'accueil. */
+export async function getMyMoods(from: string): Promise<{ entry_date: string; mood: JournalEntry["mood"] }[]> {
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase
+    .from("journal_entries")
+    .select("entry_date, mood, created_at")
+    .eq("author_id", user.id)
+    .gte("entry_date", from)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}

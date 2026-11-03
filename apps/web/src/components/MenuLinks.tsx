@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconCle, IconJournaux, IconReglages } from "./icons";
+import { IconCle, IconJournaux, IconReglages, IconSoleil } from "./icons";
 
 const LINKS = [
+  { href: "/aujourdhui", label: "Aujourd'hui", Icon: IconSoleil, match: (p: string) => p.startsWith("/aujourdhui") },
   { href: "/journaux", label: "Journaux", Icon: IconJournaux, match: (p: string) => p.startsWith("/journaux") },
   { href: "/rejoindre", label: "Rejoindre un journal", Icon: IconCle, match: (p: string) => p.startsWith("/rejoindre") },
 ] as const;
