@@ -105,11 +105,11 @@ select pg_temp.check((select title from journals where id = 'aaaaaaaa-0000-0000-
 
 -- Stockage : Léa peut déposer une photo dans le journal partagé, pas dans l'intime
 select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
-insert into storage.objects (bucket_id, name, owner)
-values ('attachments', 'aaaaaaaa-0000-0000-0000-000000000001/x/photo.jpg', auth.uid());
+insert into storage.objects (bucket_id, name, owner_id)
+values ('attachments', 'aaaaaaaa-0000-0000-0000-000000000001/x/photo.jpg', auth.uid()::text);
 do $$ begin
-  insert into storage.objects (bucket_id, name, owner)
-  values ('attachments', 'aaaaaaaa-0000-0000-0000-000000000002/x/photo.jpg', auth.uid());
+  insert into storage.objects (bucket_id, name, owner_id)
+  values ('attachments', 'aaaaaaaa-0000-0000-0000-000000000002/x/photo.jpg', auth.uid()::text);
   raise exception 'ÉCHEC : dépôt dans le journal intime d''autrui';
 exception when insufficient_privilege then raise notice 'ok  pas de dépôt de fichier dans le journal d''autrui';
 end $$;
