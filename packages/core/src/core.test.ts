@@ -3,7 +3,8 @@ import {
   createJournalSchema, entrySchema, formatInviteCode, isValidInviteCode,
   monthGrid, normalizeInviteCode, toIsoDate,
 } from "./index";
-import { notebookSchema, parseTags, seanceToText } from "./index";
+import { checkUpload, filePath, folderNameSchema, formatBytes } from "./index";
+import { notebookSchema, parseTags, postSchema, progressPercent, quoteSchema, seanceToText, workSchema } from "./index";
 
 describe("codes d'invitation", () => {
   it("normalise la saisie", () => {
@@ -113,5 +114,55 @@ describe("notes", () => {
     expect(seanceToText([{ kind: "texte", content: "I. A priori", author: "Nassim" }, { kind: "question", content: "QPC ?", author: "Inès" }])).toBe(
       "I. A priori\n— Nassim\n\nQuestion (Inès) : QPC ?",
     );
+  });
+});
+
+describe("cercles", () => {
+  it("garde seulement les champs du type choisi", () => {
+    const p = postSchema.parse({ kind: "evenement", body: "Qui vient ?", eventTitle: "Strasbourg", eventDay: "2026-12-12", quoteText: "ignorée" });
+    expect(p).toMatchObject({ body: "Qui vient ?", event_title: "Strasbourg", event_day: "2026-12-12", quote_text: null });
+  });
+  it("refuse une publication vide ou un événement sans jour", () => {
+    expect(postSchema.safeParse({ kind: "mot", body: "  " }).success).toBe(false);
+    expect(postSchema.safeParse({ kind: "evenement", eventTitle: "Fête" }).success).toBe(false);
+    expect(postSchema.safeParse({ kind: "citation", quoteText: "Chaque homme…", quoteSource: "Montaigne" }).success).toBe(true);
+  });
+});
+
+describe("bibliothèque", () => {
+  it("valide une œuvre saisie dans un formulaire", () => {
+    const w = workSchema.parse({ title: "Les Années", creator: "Annie Ernaux", progress: "158", progress_total: "254", rating: "", url: "" });
+    expect(w).toMatchObject({ kind: "livre", progress: 158, progress_total: 254, rating: null, url: null, creator: "Annie Ernaux" });
+    expect(workSchema.safeParse({ title: "X", progress: "300", progress_total: "254" }).success).toBe(false);
+    expect(workSchema.safeParse({ title: "X", url: "javascript:alert(1)" }).success).toBe(false);
+  });
+  it("retire les guillemets d'une citation collée", () => {
+    expect(quoteSchema.parse({ text: "« On ne voit bien qu'avec le cœur. »", source: "" })).toEqual({ text: "On ne voit bien qu'avec le cœur.", source: null });
+  });
+  it("calcule l'avancement", () => {
+    expect(progressPercent(158, 254)).toBe(62);
+    expect(progressPercent(10, null)).toBeNull();
+  });
+});
+
+describe("fichiers", () => {
+  it("affiche les tailles en unités françaises", () => {
+    expect(formatBytes(512)).toBe("512 o");
+    expect(formatBytes(86 * 1024)).toBe("86 Ko");
+    expect(formatBytes(2.4 * 1024 * 1024)).toBe("2,4 Mo");
+    expect(formatBytes(3.2 * 1024 ** 3)).toBe("3,2 Go");
+    expect(formatBytes(1024 * 1024)).toBe("1 Mo");
+  });
+  it("range le fichier dans le dossier de sa propriétaire", () => {
+    expect(filePath("u1", "f1", "application/pdf")).toBe("u1/f1.pdf");
+  });
+  it("refuse les types inconnus et les fichiers trop gros", () => {
+    expect(checkUpload({ name: "a.exe", size: 10, type: "application/x-msdownload" })).toMatch(/pas un type accepté/);
+    expect(checkUpload({ name: "a.pdf", size: 26 * 1024 * 1024, type: "application/pdf" })).toMatch(/25 Mo/);
+    expect(checkUpload({ name: "a.pdf", size: 10, type: "application/pdf" })).toBeNull();
+  });
+  it("nettoie les noms de dossier", () => {
+    expect(folderNameSchema.parse("  Cours / L2 ")).toBe("Cours L2");
+    expect(folderNameSchema.safeParse("   ").success).toBe(false);
   });
 });

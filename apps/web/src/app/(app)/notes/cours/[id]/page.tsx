@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { formatLongDate, parseIsoDate, todayIn } from "@anima/core";
+import { fileType, formatBytes, formatLongDate, isImage, parseIsoDate, todayIn } from "@anima/core";
 import { getCours, type CoursData } from "@/lib/notes";
 import { MONTHS } from "@/lib/format";
 import { initial } from "@/components/Avatar";
@@ -258,10 +258,15 @@ async function Cours({ params, searchParams }: PageProps<"/notes/cours/[id]">) {
                       className="flex-1 min-w-0 pl-4 border-l-2 flex flex-wrap items-start gap-x-4 gap-y-1"
                       style={{ borderColor: t.line }}
                     >
-                      <RichText
-                        text={b.content}
-                        className="basis-full text-[16px] leading-[1.7]"
-                      />
+                      {b.file_id && (
+                        <SeanceFile id={b.file_id} files={data.files} />
+                      )}
+                      {b.content && (
+                        <RichText
+                          text={b.content}
+                          className="basis-full text-[16px] leading-[1.7]"
+                        />
+                      )}
                       {actions}
                     </div>
                   </div>
@@ -270,7 +275,7 @@ async function Cours({ params, searchParams }: PageProps<"/notes/cours/[id]">) {
             </div>
 
             <div className="print:hidden">
-              <AddBlock noteId={current.id} notebookId={notebook.id} />
+              <AddBlock userId={data.userId} noteId={current.id} notebookId={notebook.id} />
             </div>
           </article>
         )}
@@ -424,5 +429,35 @@ function Questions({ data }: { data: CoursData }) {
         </form>
       ))}
     </section>
+  );
+}
+
+function SeanceFile({ id, files }: { id: string; files: CoursData["files"] }) {
+  const f = files.get(id);
+  if (!f)
+    return <p className="basis-full text-[13px] text-doux">Fichier retiré par son autrice.</p>;
+  if (isImage(f.mime))
+    return (
+      <a href={`/fichiers/ouvrir/${id}`} target="_blank" rel="noopener" className="basis-full block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={f.url} alt={f.name} className="max-h-[360px] rounded-lg bg-lin" />
+      </a>
+    );
+  const t = fileType(f.mime);
+  return (
+    <a
+      href={`/fichiers/ouvrir/${id}`}
+      target="_blank"
+      rel="noopener"
+      className="flex items-center gap-3 rounded-lg border border-noir/10 px-3 py-2 hover:bg-lin max-w-md"
+    >
+      <span aria-hidden className="w-8 h-8 rounded grid place-items-center text-[9px] font-semibold text-casse shrink-0" style={{ background: t.color }}>
+        {t.badge}
+      </span>
+      <span className="min-w-0 flex flex-col">
+        <span className="text-sm truncate">{f.name}</span>
+        <span className="text-xs text-doux">{formatBytes(f.size)}</span>
+      </span>
+    </a>
   );
 }

@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
+  blockContentSchema,
   blockSchema,
   noteSchema,
   notebookSchema,
@@ -183,15 +184,17 @@ export async function addBlock(
   const noteId = uuid(form.get("noteId"));
   const notebookId = uuid(form.get("notebookId"));
   if (!noteId || !notebookId) return { error: "Séance introuvable." };
+  const fileId = uuid(form.get("fileId"));
   const parsed = blockSchema.safeParse({
     kind: form.get("kind") || undefined,
-    content: form.get("content"),
+    content: form.get("content") ?? "",
+    hasFile: !!fileId,
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Passage invalide." };
   const { error } = await supabase
     .from("note_blocks")
-    .insert({ note_id: noteId, notebook_id: notebookId, ...parsed.data });
+    .insert({ note_id: noteId, notebook_id: notebookId, ...parsed.data, file_id: fileId });
   if (error)
     return { error: "Ton ajout n'a pas pu être enregistré. Réessaie." };
   return ok(`/notes/cours/${notebookId}`);
@@ -204,7 +207,7 @@ export async function updateBlock(
   const { supabase } = await requireUser();
   const id = uuid(form.get("id"));
   const notebookId = uuid(form.get("notebookId"));
-  const content = blockSchema.shape.content.safeParse(form.get("content"));
+  const content = blockContentSchema.safeParse(form.get("content"));
   if (!id || !content.success)
     return {
       error: content.error?.issues[0]?.message ?? "Passage introuvable.",
