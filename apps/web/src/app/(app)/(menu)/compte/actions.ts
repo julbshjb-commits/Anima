@@ -2,7 +2,9 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { aiSpacesSchema } from "@anima/core";
 import { requireUser } from "@/lib/auth";
+import { saveAiSpaces } from "@/lib/ia";
 import { adminClient } from "@/lib/supabase/admin";
 
 export type SimpleState = { error?: string; ok?: boolean };
@@ -54,4 +56,24 @@ export async function deleteAccount(_prev: SimpleState, form: FormData): Promise
   if (error) return { error: "La suppression a échoué. Écris-nous si cela se reproduit." };
   await supabase.auth.signOut();
   redirect("/");
+}
+
+/** Espaces ouverts aux assistants IA, modifiés depuis Réglages. */
+export async function saveAiAccess(_prev: SimpleState, form: FormData): Promise<SimpleState> {
+  const spaces = aiSpacesSchema.safeParse(form.getAll("spaces"));
+  if (!spaces.success) return { error: "Choix d'espaces invalide." };
+  const { supabase, user } = await requireUser();
+  const { error } = await saveAiSpaces(supabase, user.id, spaces.data);
+  if (error) return { error: "Tes choix n'ont pas pu être enregistrés." };
+  revalidatePath("/compte");
+  return { ok: true };
+}
+
+/** Retire l'accès d'une appli : ses jetons ne marchent plus. */
+export async function revokeApp(form: FormData) {
+  const clientId = String(form.get("clientId") ?? "");
+  if (!/^[\w.:/-]{1,300}$/.test(clientId)) return;
+  const { supabase } = await requireUser();
+  await supabase.auth.oauth.revokeGrant({ clientId });
+  revalidatePath("/compte");
 }
