@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /** Pages accessibles sans être connecté. */
 const PUBLIC_PATHS = ["/", "/connexion", "/auth/callback", "/confidentialite", "/conditions", "/mentions-legales"];
+/** Connecteur IA : authentifié par jeton (en-tête Authorization), pas par cookie. */
+const TOKEN_PATHS = ["/api/mcp", "/.well-known/"];
 
 /**
  * Rafraîchit la session Supabase à chaque requête et protège les pages privées.
@@ -10,6 +12,8 @@ const PUBLIC_PATHS = ["/", "/connexion", "/auth/callback", "/confidentialite", "
  * le proxy n'est qu'une première barrière, pratique pour rediriger tôt.
  */
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (TOKEN_PATHS.some((p) => path === p || path.startsWith(p.endsWith("/") ? p : `${p}/`))) return NextResponse.next();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return NextResponse.next();
@@ -38,13 +42,19 @@ export async function proxy(request: NextRequest) {
     const to = request.nextUrl.clone();
     to.pathname = "/connexion";
     to.search = "";
-    to.searchParams.set("suite", pathname);
+    // On garde la requête : la page d'autorisation a besoin de son authorization_id.
+    to.searchParams.set("suite", pathname + request.nextUrl.search);
     return NextResponse.redirect(to);
   }
   if (signedIn && (pathname === "/" || pathname === "/connexion")) {
+    const suite = request.nextUrl.searchParams.get("suite");
     const to = request.nextUrl.clone();
-    to.pathname = "/aujourdhui";
     to.search = "";
+    if (suite && suite.startsWith("/")) {
+      const dest = new URL(suite, request.url);
+      if (dest.origin === request.nextUrl.origin) return NextResponse.redirect(dest);
+    }
+    to.pathname = "/aujourdhui";
     return NextResponse.redirect(to);
   }
   return response;

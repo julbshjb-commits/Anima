@@ -522,3 +522,48 @@ delete from files where id = 'f1f1f1f1-0000-0000-0000-000000000001';
 select pg_temp.check((select count(*) from circle_posts where id = 'ffffffff-0000-0000-0000-0000000000a2') = 0, 'supprimer un fichier retire la publication qui le partageait');
 reset role;
 \echo 'Tests des Fichiers : ok.'
+
+-- ============ Connecteur IA : une appli tierce ne voit que ce qu'on lui ouvre ============
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('66666666-6666-6666-6666-666666666666', 'ines@example.org', '{"display_name":"Inès"}');
+select pg_temp.as_user('66666666-6666-6666-6666-666666666666');
+insert into journals (id, owner_id, title, kind) values
+  ('aaaaaaaa-0000-0000-0000-000000000066', auth.uid(), 'Intime d''Inès', 'intime');
+insert into journal_entries (journal_id, author_id, content_text) values
+  ('aaaaaaaa-0000-0000-0000-000000000066', auth.uid(), 'Très personnel');
+insert into tasks (title) values ('Appeler la banque');
+insert into notebooks (id, title) values ('bbbbbbbb-0000-0000-0000-000000000066', 'Idées');
+insert into notes (notebook_id, title) values ('bbbbbbbb-0000-0000-0000-000000000066', 'Une idée');
+insert into works (title) values ('Le Petit Prince');
+
+-- Inès autorise Claude pour M'organiser seulement
+insert into ai_access (spaces) values ('{organiser}');
+select set_config('request.jwt.claims', '{"client_id":"claude-test"}', false);
+select pg_temp.check((select count(*) from tasks) = 1, 'IA : voit les tâches ouvertes');
+select pg_temp.check((select count(*) from notes) = 0 and (select count(*) from notebooks) = 0, 'IA : ne voit pas les notes fermées');
+select pg_temp.check((select count(*) from works) = 0, 'IA : ne voit pas la bibliothèque fermée');
+select pg_temp.check((select count(*) from journals) = 0 and (select count(*) from journal_entries) = 0, 'IA : ne voit pas le journal intime');
+insert into tasks (title) values ('Ajoutée par Claude');
+select pg_temp.check((select count(*) from tasks) = 2, 'IA : peut ajouter une tâche');
+do $$ begin
+  insert into works (title) values ('Intrusion');
+  raise exception 'ÉCHEC : IA écrit dans un espace fermé';
+exception when insufficient_privilege then raise notice 'ok  IA : ne peut pas écrire dans un espace fermé';
+end $$;
+-- L'appli ne peut pas s'ouvrir elle-même d'autres espaces
+update ai_access set spaces = '{organiser,intime}';
+select pg_temp.check((select spaces from ai_access) = '{organiser}', 'IA : ne peut pas élargir ses propres droits');
+delete from ai_access;
+select pg_temp.check((select count(*) from ai_access) = 1, 'IA : ne peut pas effacer les réglages');
+
+-- Inès ouvre aussi son journal intime, depuis sa session normale
+select set_config('request.jwt.claims', '', false);
+update ai_access set spaces = '{organiser,intime}';
+select set_config('request.jwt.claims', '{"client_id":"claude-test"}', false);
+select pg_temp.check((select count(*) from journal_entries) = 1, 'IA : voit le journal intime une fois ouvert');
+
+-- Session normale : tout reste visible
+select set_config('request.jwt.claims', '', false);
+select pg_temp.check((select count(*) from notes) = 1 and (select count(*) from works) = 1, 'session normale : rien ne change');
+reset role;
+\echo 'Tests du connecteur IA : ok.'

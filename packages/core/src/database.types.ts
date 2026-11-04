@@ -241,6 +241,8 @@ export type FileRow = {
   updated_at: Timestamp;
 };
 
+export type AiAccess = { user_id: string; spaces: string[]; updated_at: Timestamp };
+
 export type Database = {
   public: {
     Tables: {
@@ -313,6 +315,7 @@ export type Database = {
       quotes: Table<Quote, { work_id?: string | null; text: string; source?: string | null }>;
       folders: Table<Folder, { name: string; parent_id?: string | null }>;
       /** Taille et type sont lus depuis le stockage par la base. */
+      ai_access: Table<AiAccess, { spaces: string[]; updated_at?: string }>;
       files: Table<FileRow, { name: string; storage_path: string; folder_id?: string | null; starred?: boolean; note_id?: string | null; trashed_at?: string | null }>;
       reading_goals: Table<ReadingGoal, { year: number; target: number }>;
       notebook_invites: Table<{ id: string; notebook_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
