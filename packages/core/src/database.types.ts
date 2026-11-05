@@ -111,6 +111,7 @@ export type CalendarEvent = {
   starts_at: Timestamp;
   ends_at: Timestamp | null;
   circle_post_id: string | null;
+  done_at: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 };
@@ -282,7 +283,7 @@ export type Database = {
           note_id?: string | null;
         }
       >;
-      events: Table<CalendarEvent, { title: string; place?: string | null; color?: Mood; starts_at: string; ends_at?: string | null; circle_post_id?: string | null }>;
+      events: Table<CalendarEvent, { title: string; place?: string | null; color?: Mood; starts_at: string; ends_at?: string | null; circle_post_id?: string | null; done_at?: string | null }>;
       rituals: Table<Ritual, { title: string; archived_at?: string | null }>;
       ritual_checks: Table<RitualCheck, { ritual_id: string; day: string }>;
       notebooks: Table<Notebook, { title: string; kind?: NotebookKind; subtitle?: string | null; cover?: string; archived_at?: string | null }>;

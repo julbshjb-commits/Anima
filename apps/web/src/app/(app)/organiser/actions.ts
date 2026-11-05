@@ -86,6 +86,14 @@ export async function addEvent(_: OrgState, form: FormData): Promise<OrgState> {
   return done();
 }
 
+export async function toggleEvent(form: FormData) {
+  const { supabase } = await requireUser();
+  const id = uuid(form.get("id"));
+  if (!id) return;
+  await supabase.from("events").update({ done_at: form.get("done") === "1" ? new Date().toISOString() : null }).eq("id", id);
+  done();
+}
+
 export async function deleteEvent(form: FormData) {
   const { supabase } = await requireUser();
   const id = uuid(form.get("id"));

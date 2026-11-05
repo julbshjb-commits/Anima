@@ -8,7 +8,7 @@ import type { Task } from "@/lib/database.types";
 import { MONTHS } from "@/lib/format";
 import { IconPlus, IconRetour, IconSoleil } from "@/components/icons";
 import { LegalFooter } from "@/components/LegalPage";
-import { archiveProject, archiveRitual, deleteEvent, deleteTask, toggleRitual, toggleTask } from "./actions";
+import { archiveProject, archiveRitual, deleteEvent, deleteTask, toggleEvent, toggleRitual, toggleTask } from "./actions";
 import { NewEvent, NewProject, NewRitual, QuickAdd } from "./Forms";
 
 export const metadata: Metadata = { title: "M'organiser" };
@@ -164,12 +164,27 @@ function Jour({ data, day, from, today }: { data: OrganiserData; day: string; fr
               return (
                 <div key={e.id} className="group flex gap-3.5 items-stretch">
                   <span className="w-11 pt-3 text-[13px] text-doux text-right shrink-0">{start.replace(/^0/, "")}</span>
-                  <div className="flex-1 min-w-0 rounded-[10px] px-3.5 py-2.5 flex items-start gap-2" style={{ background: `${MOOD_META[e.color].color}33` }}>
+                  <div className="flex-1 min-w-0 rounded-[10px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: `${MOOD_META[e.color].color}33` }}>
+                    <form action={toggleEvent} className="pt-0.5">
+                      <input type="hidden" name="id" value={e.id} />
+                      <input type="hidden" name="done" value={e.done_at ? "0" : "1"} />
+                      <button
+                        type="submit"
+                        aria-label={e.done_at ? `Rouvrir « ${e.title} »` : `Marquer « ${e.title} » comme fait`}
+                        className={`w-5 h-5 rounded-md grid place-items-center border-[1.5px] ${e.done_at ? "bg-noir border-noir text-casse" : "border-noir/40 hover:border-noir"}`}
+                      >
+                        {e.done_at && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="m5 12 5 5 9-10" />
+                          </svg>
+                        )}
+                      </button>
+                    </form>
                     <span className="flex-1 min-w-0 flex flex-col">
-                      <span className="text-[15px] font-medium">{e.title}</span>
+                      <span className={`text-[15px] font-medium ${e.done_at ? "line-through text-doux" : ""}`}>{e.title}</span>
                       <span className="text-xs text-encre">{[end && `jusqu'à ${end.replace(/^0/, "")}`, e.place].filter(Boolean).join(" · ")}</span>
                     </span>
-                    <form action={deleteEvent} className="opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                    <form action={deleteEvent} className="[@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                       <input type="hidden" name="id" value={e.id} />
                       <button type="submit" aria-label={`Supprimer ${e.title}`} className="text-xs text-doux hover:text-terre">
                         Supprimer
@@ -253,7 +268,8 @@ function TaskRow({ t, data, today }: { t: Task; data: OrganiserData; today: stri
         <span className={`text-[15px] ${t.done_at ? "line-through text-doux" : ""}`}>{t.title}</span>
         {meta.length > 0 && <span className={`text-xs ${late ? "text-terre" : "text-doux"}`}>{meta.join(" · ")}</span>}
       </span>
-      <form action={deleteTask} className="opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+      {/* Toujours visible sur écran tactile (pas de survol sur iPad ou téléphone). */}
+      <form action={deleteTask} className="[@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
         <input type="hidden" name="id" value={t.id} />
         <button type="submit" aria-label={`Supprimer « ${t.title} »`} className="text-xs text-doux hover:text-terre">
           Supprimer
@@ -292,7 +308,7 @@ function Rituels({ data, from, today }: { data: OrganiserData; from: string; tod
               );
             })}
           </span>
-          <form action={archiveRitual} className="opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+          <form action={archiveRitual} className="[@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
             <input type="hidden" name="id" value={r.id} />
             <button type="submit" aria-label={`Retirer le rituel ${r.title}`} className="text-xs text-doux hover:text-terre">
               ×
