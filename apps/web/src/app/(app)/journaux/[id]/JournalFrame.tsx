@@ -166,11 +166,11 @@ function Calendar({ journal, members, canWrite, year, month, entries, selected }
           const isFocus = date === focus;
           const all = shared && info && info.authors.size === members.length;
           const bg = info ? (info.mood ? MOOD_META[info.mood].color : "#E8E1D6") : undefined;
-          const fg = info?.mood && DARK_MOODS.includes(info.mood) ? "#F5F3EE" : undefined;
-          const ring = isFocus ? "shadow-[0_0_0_2px_#F5F3EE,0_0_0_3px_#151515] font-semibold" : "";
-          const cls = `relative aspect-square rounded-md grid place-items-center text-xs ${info ? "font-medium" : "text-[#6F6A63]"} ${ring}`;
+          const fg = info?.mood && DARK_MOODS.includes(info.mood) ? "#F5F3EE" : info ? "#16130F" : undefined;
+          const ring = isFocus ? "shadow-[0_0_0_2px_var(--color-casse),0_0_0_3px_var(--color-noir)] font-semibold" : "";
+          const cls = `relative aspect-square rounded-md grid place-items-center text-xs ${info ? "font-medium" : "text-doux"} ${ring}`;
           const label = `${formatLongDate(date)}${info ? (info.mood ? `, ${MOOD_META[info.mood].label}` : ", une entrée") : ", pas d'entrée"}`;
-          const dot = all && <span className="absolute bottom-[3px] w-1 h-1 rounded-full" style={{ background: fg ?? "#151515" }} />;
+          const dot = all && <span className="absolute bottom-[3px] w-1 h-1 rounded-full" style={{ background: fg ?? "currentColor" }} />;
           if (info)
             return (
               <Link key={date} href={`${base}?mois=${date.slice(0, 7)}#${date}`} aria-label={label} className={`${cls} hover:opacity-85`} style={{ background: bg, color: fg }}>

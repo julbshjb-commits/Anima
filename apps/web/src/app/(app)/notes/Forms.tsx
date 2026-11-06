@@ -274,7 +274,7 @@ export function NoteEditor({
         maxLength={100000}
         aria-label="Texte de la note"
         placeholder="Écris, colle tes notes de cours, fais des listes…"
-        className="w-full min-h-[50vh] [field-sizing:content] resize-none rounded-xl bg-papier border border-noir/8 p-6 lg:p-8 text-[17px] leading-[1.7] text-[#1E1C1A] bg-[linear-gradient(rgba(21,21,21,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(21,21,21,.05)_1px,transparent_1px)] bg-[size:24px_24px] focus:outline-none placeholder:italic placeholder:text-doux"
+        className="w-full min-h-[50vh] [field-sizing:content] resize-none rounded-xl bg-papier border border-noir/8 p-6 lg:p-8 text-[17px] leading-[1.7] text-encre bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:24px_24px] focus:outline-none placeholder:italic placeholder:text-doux"
       />
     </form>
   );
@@ -555,7 +555,7 @@ export function InviteToNotebook({
           </p>
           <button
             type="button"
-            className="self-start h-8 px-3 rounded-full bg-casse text-noir text-xs font-medium"
+            className="self-start h-8 px-3 rounded-full bg-blanc text-nuit text-xs font-medium"
             onClick={async () => {
               await navigator.clipboard.writeText(
                 `Rejoins le carnet de cours « ${title} » sur Anima avec le code ${formatInviteCode(state.code!)} (valable 48 h).`,

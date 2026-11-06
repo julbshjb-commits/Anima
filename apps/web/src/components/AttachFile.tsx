@@ -53,7 +53,7 @@ export function AttachFile({
       {file ? (
         <span className="flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-full bg-lin text-[13px] max-w-full">
           <span
-            className="w-6 h-6 rounded grid place-items-center text-[8px] font-semibold text-casse shrink-0"
+            className="w-6 h-6 rounded grid place-items-center text-[8px] font-semibold text-blanc shrink-0"
             style={{ background: fileType(file.type).color }}
             aria-hidden
           >

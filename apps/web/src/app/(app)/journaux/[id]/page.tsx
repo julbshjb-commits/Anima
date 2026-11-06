@@ -4,7 +4,8 @@ import { MOOD_META, formatLongDate, toIsoDate } from "@anima/core";
 import { getJournal, getMonthEntries } from "@/lib/data";
 import { MONTHS, parseMonth } from "@/lib/format";
 import { IconCrayon } from "@/components/icons";
-import { btn, btnGhost } from "@/components/ui";
+import { btn, btnGhost, card } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
 import { JournalFrame, authorName, membersLabel } from "./JournalFrame";
 import { LiveRefresh } from "./LiveRefresh";
 
@@ -57,7 +58,7 @@ async function Journal({ params, searchParams }: PageProps<"/journaux/[id]">) {
           </p>
         )}
 
-        <div className="w-full max-w-[720px] mx-auto flex flex-col">
+        <div className="w-full max-w-[720px] mx-auto flex flex-col gap-5">
           {entries.length === 0 ? (
             <div className="py-10 flex flex-col gap-3">
               <p className="surtitre">
@@ -70,14 +71,19 @@ async function Journal({ params, searchParams }: PageProps<"/journaux/[id]">) {
             </div>
           ) : (
             entries.map((e) => (
-              <article key={e.id} id={e.entry_date} className="scroll-mt-6 py-8 first:pt-2 border-b border-noir/8 last:border-0 flex flex-col gap-4">
+              <article
+                key={e.id}
+                id={e.entry_date}
+                className={`${card} scroll-mt-6 p-6 sm:p-8 flex flex-col gap-4 transition-transform duration-300 hover:-translate-y-0.5`}
+              >
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  {!isIntime && <Avatar name={members.find((m) => m.id === e.author_id)?.display_name ?? "?"} index={Math.max(0, members.findIndex((m) => m.id === e.author_id))} size={28} />}
                   <span className="surtitre">
                     {formatLongDate(e.entry_date)}
                     {!isIntime && ` · ${authorName(e.author_id, members, user.id)}`}
                   </span>
                   {e.mood && (
-                    <span className="inline-flex items-center gap-2 h-7 px-2.5 rounded-full border border-noir/12 text-xs">
+                    <span className="inline-flex items-center gap-2 h-7 px-3 rounded-full text-xs font-medium text-noir" style={{ background: `${MOOD_META[e.mood].color}40` }}>
                       <i className="w-2 h-2 rounded-full" style={{ background: MOOD_META[e.mood].color }} />
                       {MOOD_META[e.mood].label}
                     </span>
@@ -89,12 +95,18 @@ async function Journal({ params, searchParams }: PageProps<"/journaux/[id]">) {
                   )}
                 </div>
                 {e.title && <h2 className="titre text-[36px] leading-[1.1]">{e.title}</h2>}
-                <p className="font-serif text-xl leading-[1.65] text-[#1E1C1A] whitespace-pre-wrap">{e.content_text}</p>
+                <p className="font-serif text-xl leading-[1.65] text-encre whitespace-pre-wrap">{e.content_text}</p>
                 {e.photos.length > 0 && (
-                  <div className={`grid gap-2 ${e.photos.length > 1 ? "grid-cols-2" : ""}`}>
-                    {e.photos.map((p) => (
-                      // eslint-disable-next-line @next/next/no-img-element -- lien signé temporaire, pas d'optimisation possible
-                      <img key={p.id} src={p.url} alt="" className="w-full max-h-[420px] rounded-[10px] object-cover bg-ivoire" />
+                  <div className={`grid gap-5 py-2 ${e.photos.length > 1 ? "grid-cols-2" : "max-w-[460px]"}`}>
+                    {e.photos.map((p, i) => (
+                      // Photos en polaroïd, légèrement penchées ; elles se redressent au survol.
+                      <span
+                        key={p.id}
+                        className={`block bg-[#fffdf8] p-2 pb-8 rounded-[4px] shadow-[0_14px_30px_-14px_rgba(0,0,0,.45)] transition-transform duration-500 ease-[cubic-bezier(.3,1.6,.5,1)] hover:rotate-0 hover:scale-[1.02] ${i % 2 ? "rotate-[1.8deg]" : "-rotate-[2.2deg]"}`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- lien signé temporaire, pas d'optimisation possible */}
+                        <img src={p.url} alt="" className="w-full max-h-[420px] rounded-[2px] object-cover bg-ivoire" />
+                      </span>
                     ))}
                   </div>
                 )}

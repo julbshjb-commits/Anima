@@ -14,9 +14,9 @@ const LINKS = [
   { href: "/rejoindre", label: "Rejoindre avec un code", Icon: IconCle, match: (p: string) => p.startsWith("/rejoindre") },
 ] as const;
 
-const item = "flex items-center gap-3 h-10 px-2.5 rounded-lg text-sm";
-const active = "bg-papier shadow-[0_0_0_1px_rgba(21,21,21,.08)] text-noir font-medium";
-const idle = "text-encre hover:bg-lin";
+const item = "relative flex items-center gap-3 h-11 px-3 rounded-2xl text-sm transition-[background-color,transform] duration-200 active:scale-[.97]";
+const active = "bg-papier text-noir font-medium";
+const idle = "text-encre hover:bg-lin hover:translate-x-0.5";
 
 /** Liens de la barre latérale : seules les rubriques qui existent vraiment. */
 export function MenuLinks() {
@@ -27,9 +27,40 @@ export function MenuLinks() {
         <Link key={href} href={href} aria-current={match(path) ? "page" : undefined} className={`${item} ${match(path) ? active : idle}`}>
           <Icon />
           {label}
+          {match(path) && <span aria-hidden className="ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />}
         </Link>
       ))}
     </div>
+  );
+}
+
+const TABS = [LINKS[0], LINKS[1], LINKS[3], LINKS[2], LINKS[4]] as const;
+
+/** Barre d'onglets flottante (téléphone et iPad en portrait). */
+export function TabBar() {
+  const path = usePathname();
+  return (
+    <nav
+      aria-label="Rubriques"
+      className="lg:hidden fixed z-20 left-1/2 -translate-x-1/2 bottom-[max(12px,env(safe-area-inset-bottom))] w-[calc(100%-24px)] max-w-[560px] h-[66px] px-2 rounded-[24px] bg-[rgba(20,17,26,.86)] backdrop-blur-xl border border-trait shadow-[0_24px_50px_-20px_rgba(0,0,0,.9)] grid grid-cols-5 items-center"
+    >
+      {TABS.map(({ href, label, Icon, match }) => {
+        const on = match(path);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={on ? "page" : undefined}
+            className={`relative h-full flex flex-col items-center justify-center gap-1 text-[10.5px] md:text-xs transition-transform active:scale-90 ${on ? "text-noir font-medium" : "text-doux"}`}
+          >
+            <span className={`grid place-items-center w-10 h-8 rounded-full transition-colors ${on ? "bg-[linear-gradient(180deg,#f0d8a8,#d4ad6c)] text-nuit" : ""}`}>
+              <Icon />
+            </span>
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 

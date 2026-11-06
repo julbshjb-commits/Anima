@@ -65,7 +65,7 @@ async function Organiser({ searchParams }: PageProps<"/organiser">) {
 
 function Sidebar({ data, vue, projectId }: { data: OrganiserData; vue: Vue; projectId?: string }) {
   const item = "flex items-center gap-3 h-10 px-2.5 rounded-lg text-sm";
-  const on = "bg-papier shadow-[0_0_0_1px_rgba(21,21,21,.08)] font-medium";
+  const on = "bg-papier shadow-[0_0_0_1px_var(--trait)] font-medium";
   const off = "text-encre hover:bg-lin";
   const views = [
     { id: "jour", href: "/organiser", label: "Aujourd'hui", n: data.counts.today },

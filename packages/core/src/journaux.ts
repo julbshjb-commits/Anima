@@ -36,10 +36,10 @@ export const MOODS = [
 export type Mood = (typeof MOODS)[number];
 
 export const MOOD_META: Record<Mood, { label: string; color: string }> = {
-  lumineux: { label: "Lumineux", color: "#D9B95C" },
-  serein: { label: "Serein", color: "#9DB09A" },
-  tendre: { label: "Tendre", color: "#D6A9A0" },
-  pensif: { label: "Pensif", color: "#8C9BB0" },
+  lumineux: { label: "Lumineux", color: "#C9A86A" },
+  serein: { label: "Serein", color: "#8E9A8A" },
+  tendre: { label: "Tendre", color: "#B39A8C" },
+  pensif: { label: "Pensif", color: "#7D8794" },
   fatigue: { label: "Fatigué", color: "#B5AEA4" },
   tendu: { label: "Tendu", color: "#B4654A" },
   melancolique: { label: "Mélancolique", color: "#5E6A7D" },

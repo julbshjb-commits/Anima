@@ -28,11 +28,11 @@ export const metadata: Metadata = { title: "Cercles" };
 
 const TONES = [
   "bg-ivoire text-noir",
-  "bg-[#D9A79B] text-noir",
+  "bg-[#D9A79B] text-nuit",
   "bg-noir text-casse",
-  "bg-[#7E8FA3] text-casse",
-  "bg-[#C8B79A] text-noir",
-  "bg-sauge text-casse",
+  "bg-[#7E8FA3] text-blanc",
+  "bg-[#C8B79A] text-nuit",
+  "bg-sauge text-blanc",
 ];
 
 export default function CerclesPage(props: PageProps<"/cercles">) {
@@ -163,7 +163,7 @@ async function Cercles({ searchParams }: PageProps<"/cercles">) {
               className={`flex items-center gap-3 py-3 border-b border-trait last:border-0 ${current?.id === c.id ? "font-medium" : ""}`}
             >
               <span
-                className="w-10 h-10 shrink-0 rounded-[10px] grid place-items-center font-serif text-lg text-casse"
+                className="w-10 h-10 shrink-0 rounded-[10px] grid place-items-center font-serif text-lg text-blanc"
                 style={{ background: MOOD_META[c.color].color }}
               >
                 {initial(c.name)}
@@ -338,7 +338,7 @@ function Post({
       )}
 
       {post.quote_text && (
-        <figure className="rounded-xl bg-[#E8E1D6] px-5 py-4 flex flex-col gap-2">
+        <figure className="rounded-xl bg-ivoire px-5 py-4 flex flex-col gap-2">
           <figcaption className="surtitre">Citation</figcaption>
           <blockquote className="font-serif italic text-[22px] leading-snug">
             « {post.quote_text} »
@@ -463,7 +463,7 @@ function Attachment({ id, files }: { id: string; files: CerclesData["files"] }) 
     >
       <span
         aria-hidden
-        className="w-9 h-9 rounded-md grid place-items-center text-[9px] font-semibold text-casse shrink-0"
+        className="w-9 h-9 rounded-md grid place-items-center text-[9px] font-semibold text-blanc shrink-0"
         style={{ background: t.color }}
       >
         {t.badge}

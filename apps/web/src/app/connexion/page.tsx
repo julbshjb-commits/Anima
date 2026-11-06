@@ -38,9 +38,9 @@ export default function Connexion({ searchParams }: PageProps<"/connexion">) {
       </section>
       <aside
         aria-hidden
-        className="hidden md:block bg-[linear-gradient(150deg,#292826,#151515)] relative overflow-hidden"
+        className="hidden md:block bg-[radial-gradient(circle_at_30%_20%,rgba(138,106,69,.35),transparent_55%),radial-gradient(circle_at_80%_80%,rgba(75,85,96,.45),transparent_55%),#111112] relative overflow-hidden"
       >
-        <p className="titre italic absolute left-12 right-12 bottom-16 text-4xl leading-tight text-ivoire">
+        <p className="titre italic absolute left-12 right-12 bottom-16 text-4xl leading-tight champagne">
           « Ce qu'on écrit le soir finit par dessiner une vie. »
         </p>
       </aside>

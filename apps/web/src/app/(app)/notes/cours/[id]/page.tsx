@@ -30,11 +30,11 @@ export const metadata: Metadata = { title: "Carnet de cours" };
 /** Couleurs des membres, dans l'ordre d'arrivée (pastille et filet du passage). */
 const TONES = [
   { chip: "bg-ivoire text-noir", line: "#CFC6B8" },
-  { chip: "bg-[#D9A79B] text-noir", line: "#D9A79B" },
+  { chip: "bg-[#D9A79B] text-nuit", line: "#D9A79B" },
   { chip: "bg-noir text-casse", line: "#151515" },
-  { chip: "bg-[#7E8FA3] text-casse", line: "#7E8FA3" },
-  { chip: "bg-sauge text-casse", line: "#8A9A7B" },
-  { chip: "bg-[#C79A4B] text-noir", line: "#C79A4B" },
+  { chip: "bg-[#7E8FA3] text-blanc", line: "#7E8FA3" },
+  { chip: "bg-sauge text-blanc", line: "#8A9A7B" },
+  { chip: "bg-[#C79A4B] text-nuit", line: "#C79A4B" },
 ];
 
 export default function CoursPage(props: PageProps<"/notes/cours/[id]">) {
@@ -122,7 +122,7 @@ async function Cours({ params, searchParams }: PageProps<"/notes/cours/[id]">) {
                   key={s.id}
                   href={`/notes/cours/${notebook.id}?seance=${s.id}`}
                   aria-current={on ? "page" : undefined}
-                  className={`max-lg:shrink-0 max-lg:w-[220px] rounded-xl px-3 py-2.5 flex flex-col gap-0.5 ${on ? "bg-papier shadow-[0_0_0_1px_rgba(21,21,21,.08)]" : "hover:bg-lin"}`}
+                  className={`max-lg:shrink-0 max-lg:w-[220px] rounded-xl px-3 py-2.5 flex flex-col gap-0.5 ${on ? "bg-papier shadow-[0_0_0_1px_var(--trait)]" : "hover:bg-lin"}`}
                 >
                   <span className="text-sm leading-snug">
                     {seances.length - i} · {s.title}
@@ -231,7 +231,7 @@ async function Cours({ params, searchParams }: PageProps<"/notes/cours/[id]">) {
                   return (
                     <div
                       key={b.id}
-                      className="lg:ml-9 rounded-xl bg-[#E8E1D6] px-4 py-3.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[15px]"
+                      className="lg:ml-9 rounded-xl bg-ivoire px-4 py-3.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[15px]"
                     >
                       <span className="font-semibold">
                         Question pour le prof
@@ -333,7 +333,7 @@ async function Cours({ params, searchParams }: PageProps<"/notes/cours/[id]">) {
                     aria-label={
                       t.done_at ? "Rouvrir la tâche" : "Marquer comme faite"
                     }
-                    className={`w-6 h-6 shrink-0 rounded-md grid place-items-center ${t.done_at ? "bg-sauge text-casse" : "border border-noir/25"}`}
+                    className={`w-6 h-6 shrink-0 rounded-md grid place-items-center ${t.done_at ? "bg-sauge text-blanc" : "border border-noir/25"}`}
                   >
                     {t.done_at && <IconCheck size={14} />}
                   </button>
@@ -451,7 +451,7 @@ function SeanceFile({ id, files }: { id: string; files: CoursData["files"] }) {
       rel="noopener"
       className="flex items-center gap-3 rounded-lg border border-noir/10 px-3 py-2 hover:bg-lin max-w-md"
     >
-      <span aria-hidden className="w-8 h-8 rounded grid place-items-center text-[9px] font-semibold text-casse shrink-0" style={{ background: t.color }}>
+      <span aria-hidden className="w-8 h-8 rounded grid place-items-center text-[9px] font-semibold text-blanc shrink-0" style={{ background: t.color }}>
         {t.badge}
       </span>
       <span className="min-w-0 flex flex-col">

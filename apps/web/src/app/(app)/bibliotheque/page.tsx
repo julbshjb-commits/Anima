@@ -228,7 +228,7 @@ function Current({ work }: { work: Work }) {
   const p = progressPercent(work.progress, work.progress_total);
   const unit = WORK_KINDS[work.kind].unit;
   return (
-    <section className="rounded-3xl bg-[#ECE6DC] p-6 lg:p-7 flex flex-col sm:flex-row gap-6 sm:gap-8 sm:items-center">
+    <section className="rounded-3xl bg-ivoire p-6 lg:p-7 flex flex-col sm:flex-row gap-6 sm:gap-8 sm:items-center">
       <Link
         href={`/bibliotheque/${work.id}`}
         className="w-[120px] lg:w-[150px] shrink-0 relative"
@@ -240,7 +240,7 @@ function Current({ work }: { work: Work }) {
         />
         {p != null && (
           <span className="absolute left-0 right-0 -bottom-1 h-1 bg-noir/15 rounded-full overflow-hidden">
-            <i className="block h-full bg-casse" style={{ width: `${p}%` }} />
+            <i className="block h-full bg-champagne" style={{ width: `${p}%` }} />
           </span>
         )}
       </Link>
@@ -303,7 +303,7 @@ function QuoteCard({
 function Sidebar({ lib, vue }: { lib: Library; vue: Vue }) {
   const item =
     "flex items-center gap-3 h-10 px-2.5 rounded-lg text-sm shrink-0";
-  const on = "bg-papier shadow-[0_0_0_1px_rgba(21,21,21,.08)] font-medium";
+  const on = "bg-papier shadow-[0_0_0_1px_var(--trait)] font-medium";
   const off = "text-encre hover:bg-lin";
   const count = (kinds: WorkKind[]) =>
     lib.works.filter((w) => kinds.includes(w.kind)).length;
