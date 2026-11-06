@@ -121,7 +121,7 @@ export default function JournalScreen() {
                         borderWidth: today ? 1 : 0,
                         borderColor: c.texte,
                       }}>
-                      <Text style={{ fontFamily: fonts.texte, fontSize: 13, color: mood ? '#151515' : c.texte }}>{Number(day.slice(8))}</Text>
+                      <Text style={{ fontFamily: fonts.texte, fontSize: 13, color: mood ? '#16130F' : c.texte }}>{Number(day.slice(8))}</Text>
                     </Pressable>
                   ) : null}
                 </View>

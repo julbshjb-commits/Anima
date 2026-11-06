@@ -51,7 +51,10 @@ export default function Journaux() {
           contentContainerStyle={{ padding: 20, gap: 28, maxWidth: 640, width: '100%', alignSelf: 'center' }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
           <View style={{ gap: 6 }}>
-            <Title size={38}>{data?.me?.display_name ? `Bonjour ${data.me.display_name}` : 'Bonjour'}</Title>
+            <Title size={40}>
+              Bonjour{data?.me?.display_name ? ', ' : ''}
+              {data?.me?.display_name ? <Text style={{ fontFamily: fonts.titreItalique, color: c.champagne }}>{data.me.display_name}</Text> : null}
+            </Title>
             <Body soft>Qu’est-ce qui a compté aujourd’hui ?</Body>
           </View>
           <ErrorText>{error}</ErrorText>

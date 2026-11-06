@@ -36,7 +36,7 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
 export function Title({ children, size = 34, style, ...rest }: TextProps & { size?: number }) {
   const c = useColors();
   return (
-    <Text accessibilityRole="header" style={[{ fontFamily: fonts.titre, fontSize: size, lineHeight: size * 1.1, color: c.texte }, style]} {...rest}>
+    <Text accessibilityRole="header" style={[{ fontFamily: fonts.titre, fontSize: size, lineHeight: size * 1.12, letterSpacing: -size * 0.02, color: c.texte }, style]} {...rest}>
       {children}
     </Text>
   );
@@ -44,7 +44,7 @@ export function Title({ children, size = 34, style, ...rest }: TextProps & { siz
 
 export function Overline({ children }: { children: ReactNode }) {
   const c = useColors();
-  return <Text style={{ fontFamily: fonts.texteMoyen, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', color: c.doux }}>{children}</Text>;
+  return <Text style={{ fontFamily: fonts.texteMoyen, fontSize: 11, letterSpacing: 2.4, textTransform: 'uppercase', color: c.doux }}>{children}</Text>;
 }
 
 export function Body({ children, soft, style, ...rest }: TextProps & { soft?: boolean }) {
@@ -81,12 +81,12 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        ghost ? { borderWidth: 1, borderColor: c.trait } : { backgroundColor: c.accent },
-        { opacity: off ? 0.5 : pressed ? 0.8 : 1 },
+        ghost ? { borderWidth: 1, borderColor: c.trait } : { backgroundColor: c.accent, shadowColor: c.champagne, shadowOpacity: 0.45, shadowRadius: 16, shadowOffset: { width: 0, height: 8 } },
+        { opacity: off ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
         style,
       ]}>
       {busy ? <ActivityIndicator color={ghost ? c.texte : c.accentTexte} /> : null}
-      <Text style={{ fontFamily: fonts.texteMoyen, fontSize: 15, color: ghost ? c.texte : c.accentTexte }}>{label}</Text>
+      <Text style={{ fontFamily: fonts.texteGras, fontSize: 15, color: ghost ? c.texte : c.accentTexte }}>{label}</Text>
     </Pressable>
   );
 }
@@ -154,6 +154,6 @@ export function Loading() {
 const styles = StyleSheet.create({
   inner: { flexGrow: 1, padding: 20, gap: 20, width: '100%', maxWidth: 640, alignSelf: 'center' },
   button: { minHeight: 48, borderRadius: 999, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  input: { minHeight: 48, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, fontSize: 16 },
-  card: { borderWidth: 1, borderRadius: 18, padding: 16 },
+  input: { minHeight: 48, borderWidth: 1, borderRadius: 18, paddingHorizontal: 14, fontSize: 16 },
+  card: { borderWidth: 1, borderRadius: 24, padding: 18, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: { width: 0, height: 16 } },
 });
