@@ -860,8 +860,7 @@ create policy social_remove on storage.objects for delete to authenticated
   using (bucket_id = 'social' and owner_id = (auth.uid())::text);
 
 -- Le connecteur IA ne voit pas le bucket « social ».
-drop policy ai_gate on storage.objects;
-create policy ai_gate on storage.objects as restrictive for all to authenticated
+alter policy ai_gate on storage.objects
   using (case bucket_id
            when 'attachments' then public.ai_allows_journal(public.storage_journal_id(name))
            when 'fichiers' then public.ai_allows('fichiers')
