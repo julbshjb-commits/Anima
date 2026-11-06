@@ -2,22 +2,22 @@
 
 /* Design system Anima : couleurs de base et polices (voir la maquette « Design system »). */
 @theme {
-  /* Direction « Anima, édition nuit » (6 novembre 2026) : un fond d'encre
-     violette, du verre fumé, du champagne pour l'accent. Les anciens noms de
+  /* Direction « Anima, édition nuit » (6 novembre 2026) : un fond graphite
+     neutre, du verre fumé, du champagne pour l'accent. Les anciens noms de
      couleurs restent, mais « noir » est désormais la couleur du texte (claire)
      et « casse » celle du fond (sombre) : tous les écrans basculent d'un coup.
      « blanc » et « nuit » sont fixes, pour le texte posé sur une couleur. */
-  --color-noir: #f3ede4;
-  --color-anthracite: #1d1924;
-  --color-gris: #a69e95;
+  --color-noir: #f2efea;
+  --color-anthracite: #1a1a1b;
+  --color-gris: #a19d97;
   --color-sable: #d9bd8c;
-  --color-casse: #0d0b11;
-  --color-ivoire: #221e2a;
-  --color-papier: rgb(30 26 38 / 0.62);
+  --color-casse: #0c0c0d;
+  --color-ivoire: #1f1f21;
+  --color-papier: rgb(30 30 32 / 0.6);
   --color-lin: rgb(255 255 255 / 0.05);
   --color-terre: #e0b878;
   --color-sauge: #8fb39a;
-  --color-encre: #ddd5ca;
+  --color-encre: #dcd8d2;
   --color-gris-clair: #8f877e;
   --color-blanc: #fbf7f0;
   --color-nuit: #16130f;
@@ -84,12 +84,12 @@ body {
   height: 46vmax;
   border-radius: 50%;
   filter: blur(110px);
-  opacity: 0.22;
+  opacity: 0.2;
   animation: flotte 24s ease-in-out infinite alternate;
 }
-.aura i:nth-child(1) { background: #7a4a8c; left: -12vmax; top: -14vmax; }
-.aura i:nth-child(2) { background: #3c4f9a; right: -16vmax; top: 12vmax; animation-delay: -8s; }
-.aura i:nth-child(3) { background: #b9806a; left: 28vmax; bottom: -24vmax; animation-delay: -15s; opacity: 0.14; }
+.aura i:nth-child(1) { background: #6b6358; left: -12vmax; top: -14vmax; }
+.aura i:nth-child(2) { background: #3d4650; right: -16vmax; top: 12vmax; animation-delay: -8s; }
+.aura i:nth-child(3) { background: #8a6a45; left: 28vmax; bottom: -24vmax; animation-delay: -15s; opacity: 0.14; }
 .aura::after {
   content: "";
   position: absolute;
@@ -173,8 +173,8 @@ main > *:nth-child(n + 5) { animation-delay: 0.24s; }
   position: absolute;
   inset: -40%;
   z-index: 0;
-  filter: blur(40px) saturate(1.3);
-  opacity: 0.95;
+  filter: blur(44px);
+  opacity: 0.8;
   pointer-events: none;
 }
 .halo i {
@@ -184,15 +184,15 @@ main > *:nth-child(n + 5) { animation-delay: 0.24s; }
   border-radius: 50%;
   animation: valse 10s ease-in-out infinite;
 }
-.halo i:nth-child(1) { background: var(--color-tendre); left: 15%; top: 20%; }
-.halo i:nth-child(2) { background: var(--color-pensif); right: 10%; top: 30%; animation-delay: -3.3s; }
-.halo i:nth-child(3) { background: var(--color-lilas); left: 35%; bottom: 10%; animation-delay: -6.6s; }
-.halo i:nth-child(4) { background: var(--color-joyeux); width: 30%; height: 30%; left: 55%; top: 55%; animation-delay: -2s; opacity: 0.6; }
+.halo i:nth-child(1) { background: #8b7d6b; left: 15%; top: 20%; }
+.halo i:nth-child(2) { background: #4b5560; right: 10%; top: 30%; animation-delay: -3.3s; }
+.halo i:nth-child(3) { background: #c2a273; left: 35%; bottom: 10%; animation-delay: -6.6s; }
+.halo i:nth-child(4) { background: #e8e2d8; width: 30%; height: 30%; left: 55%; top: 55%; animation-delay: -2s; opacity: 0.6; }
 .voile {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(180deg, rgb(14 10 18 / 0.05), rgb(14 10 18 / 0.45));
+  background: linear-gradient(180deg, rgb(12 12 13 / 0.15), rgb(12 12 13 / 0.6));
 }
 .mot {
   display: inline-block;
@@ -201,7 +201,7 @@ main > *:nth-child(n + 5) { animation-delay: 0.24s; }
 
 /* Anneau arc-en-ciel autour d'un journal où quelqu'un vient d'écrire. */
 .anneau-neuf {
-  background: conic-gradient(from var(--angle), var(--color-tendre), var(--color-joyeux), var(--color-sauge), var(--color-pensif), var(--color-lilas), var(--color-tendre));
+  background: conic-gradient(from var(--angle), #f3dcb0, #8a6a45, #e8e2d8, #4b5560, #c2a273, #f3dcb0);
   animation: tourne 4s linear infinite;
 }
 .flamme { animation: danse 1.4s ease-in-out infinite; transform-origin: 50% 90%; }

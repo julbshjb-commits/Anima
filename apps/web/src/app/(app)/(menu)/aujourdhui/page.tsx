@@ -183,7 +183,7 @@ function activity(j: JournalCard, me: string) {
 function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today: string }) {
   if (!j)
     return (
-      <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-blanc p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
+      <section className="relative isolate overflow-hidden rounded-2xl bg-[#111112] text-blanc p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
         <div className="halo" aria-hidden>
           <i />
           <i />
@@ -201,7 +201,7 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
     );
   const other = j.last && j.last.author_id !== me && zonedParts(j.last.created_at).day === today ? j.members.find((m) => m.id === j.last?.author_id) : undefined;
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-blanc p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
+    <section className="relative isolate overflow-hidden rounded-2xl bg-[#111112] text-blanc p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
       <div className="halo" aria-hidden>
         <i />
         <i />
@@ -214,7 +214,7 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
         {other && (
           <span className="flex items-center gap-2 text-[13px] text-blanc/90">
             <span className="relative">
-              <span className="pouls absolute inset-0 rounded-full bg-tendre/60" aria-hidden />
+              <span className="pouls absolute inset-0 rounded-full bg-champagne/50" aria-hidden />
               <span className="relative block rounded-full ring-2 ring-blanc/40">
                 <Avatar name={other.display_name} index={1} size={24} />
               </span>
@@ -252,7 +252,7 @@ const QUESTION = "Qu'est-ce qui a compté aujourd'hui, même un tout petit peu ?
 
 function IntimeCard({ j }: { j: JournalCard | null }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl bg-anthracite text-blanc p-7 flex flex-col gap-5 justify-between bg-[radial-gradient(circle_at_85%_10%,rgba(185,164,220,.35),transparent_55%),radial-gradient(circle_at_10%_100%,rgba(142,162,201,.25),transparent_50%)]">
+    <section className="relative isolate overflow-hidden rounded-2xl bg-anthracite text-blanc p-7 flex flex-col gap-5 justify-between bg-[radial-gradient(circle_at_85%_10%,rgba(194,162,115,.18),transparent_55%),radial-gradient(circle_at_10%_100%,rgba(255,255,255,.06),transparent_50%)]">
       <div className="flex items-center justify-between">
         <p className="surtitre !text-gris-clair">Mon journal intime</p>
         <span className="text-sable">
