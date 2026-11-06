@@ -94,6 +94,7 @@ insert into public_profiles (id, handle, name) values (auth.uid(), 'xena', 'Xén
 insert into follows (followee_id) values ('a1000000-0000-0000-0000-000000000001');
 select pg_temp.as_user('a1000000-0000-0000-0000-000000000001');
 insert into blocks (blocked_id) values ('a1000000-0000-0000-0000-000000000003');
+select pg_temp.check(exists (select 1 from public_profiles where handle = 'xena'), 'on voit encore qui on a bloqué (pour débloquer)');
 select pg_temp.as_user('a1000000-0000-0000-0000-000000000003');
 select pg_temp.check((select count(*) from posts) = 0, 'bloquée : ne voit plus les publications');
 select pg_temp.check(not exists (select 1 from public_profiles where handle = 'zoe.lit'), 'bloquée : ne voit plus le profil');

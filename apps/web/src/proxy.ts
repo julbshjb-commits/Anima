@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Pages accessibles sans être connecté. */
-const PUBLIC_PATHS = ["/", "/connexion", "/auth/callback", "/confidentialite", "/conditions", "/mentions-legales"];
+const PUBLIC_PATHS = ["/", "/connexion", "/auth/callback", "/confidentialite", "/conditions", "/mentions-legales", "/regles"];
 /** Connecteur IA : authentifié par jeton (en-tête Authorization), pas par cookie. */
 const TOKEN_PATHS = ["/api/mcp", "/.well-known/"];
 

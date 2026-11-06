@@ -714,9 +714,11 @@ alter table public.post_comments   enable row level security;
 alter table public.reports         enable row level security;
 alter table public.notifications   enable row level security;
 
+-- Celui qui bloque garde l'en-tête de la personne bloquée (pour pouvoir la débloquer).
 create policy public_profiles_select on public.public_profiles for select to authenticated
   using (id = (select auth.uid()) or public.is_app_admin()
-         or (suspended_at is null and not public.is_blocked_between((select auth.uid()), id)));
+         or (suspended_at is null and not public.is_blocked_between((select auth.uid()), id))
+         or exists (select 1 from public.blocks b where b.blocker_id = (select auth.uid()) and b.blocked_id = id));
 create policy public_profiles_insert on public.public_profiles for insert to authenticated
   with check (id = (select auth.uid()));
 create policy public_profiles_update on public.public_profiles for update to authenticated

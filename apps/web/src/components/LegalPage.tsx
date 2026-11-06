@@ -31,6 +31,9 @@ export function LegalFooter() {
       <Link href="/conditions" className="hover:underline underline-offset-4">
         Conditions d'utilisation
       </Link>
+      <Link href="/regles" className="hover:underline underline-offset-4">
+        Règles de la communauté
+      </Link>
       <Link href="/mentions-legales" className="hover:underline underline-offset-4">
         Mentions légales
       </Link>

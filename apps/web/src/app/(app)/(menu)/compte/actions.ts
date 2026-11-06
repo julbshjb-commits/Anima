@@ -52,6 +52,14 @@ export async function deleteAccount(_prev: SimpleState, form: FormData): Promise
     if (rmErr) return { error: "La suppression a échoué. Écris-nous si cela se reproduit." };
   }
 
+  // Photos du réseau public : dossier {id}/ du bucket « social ».
+  for (;;) {
+    const { data: objects } = await admin.storage.from("social").list(user.id, { limit: 100 });
+    if (!objects?.length) break;
+    const { error: rmErr } = await admin.storage.from("social").remove(objects.map((o) => `${user.id}/${o.name}`));
+    if (rmErr) return { error: "La suppression a échoué. Écris-nous si cela se reproduit." };
+  }
+
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) return { error: "La suppression a échoué. Écris-nous si cela se reproduit." };
   await supabase.auth.signOut();

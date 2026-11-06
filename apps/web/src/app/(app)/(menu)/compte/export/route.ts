@@ -13,7 +13,7 @@ export async function GET() {
   if (!auth.user) return NextResponse.json({ error: "non connecté" }, { status: 401 });
   const uid = auth.user.id;
 
-  const [profile, memberships, entries, attachments, projects, tasks, events, rituals, checks, notebooks, notes, blocks, circles, posts, comments, reactions, works, quotes, goals, folders, files] = await Promise.all([
+  const [profile, memberships, entries, attachments, projects, tasks, events, rituals, checks, notebooks, notes, blocks, circles, posts, comments, reactions, works, quotes, goals, folders, files, pubProfile, pubPosts, pubComments, pubFollows] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
     supabase.from("journal_members").select("role, joined_at, journal:journals(id, title, kind, created_at)").eq("user_id", uid),
     supabase
@@ -40,6 +40,10 @@ export async function GET() {
     supabase.from("reading_goals").select("year, target").eq("owner_id", uid),
     supabase.from("folders").select("id, parent_id, name, created_at").eq("owner_id", uid),
     supabase.from("files").select("id, folder_id, name, mime_type, size_bytes, starred, note_id, trashed_at, created_at").eq("owner_id", uid),
+    supabase.from("public_profiles").select("handle, name, bio, is_private, created_at").eq("id", uid).maybeSingle(),
+    supabase.from("posts").select("id, body, mood, source, quote_by, photo_path, likes_count, comments_count, created_at").eq("author_id", uid),
+    supabase.from("post_comments").select("id, post_id, body, created_at").eq("author_id", uid),
+    supabase.from("follows").select("followee_id, status, created_at").eq("follower_id", uid),
   ]);
 
   const body = {
@@ -54,6 +58,7 @@ export async function GET() {
     fichiers: { dossiers: folders.data, fichiers: files.data, note: "Le contenu de chaque fichier se télécharge depuis Mes fichiers." },
     cercles: { cercles: circles.data, publications: posts.data, commentaires: comments.data, reactions: reactions.data },
     notes: { carnets: notebooks.data, notes: notes.data, passages_de_seance: blocks.data },
+    reseau: { profil_public: pubProfile.data, publications: pubPosts.data, commentaires: pubComments.data, abonnements: pubFollows.data },
   };
   return new NextResponse(JSON.stringify(body, null, 2), {
     headers: {
