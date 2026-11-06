@@ -2,21 +2,36 @@
 
 /* Design system Anima : couleurs de base et polices (voir la maquette « Design system »). */
 @theme {
-  --color-noir: #151515;
-  --color-anthracite: #292826;
-  --color-gris: #65615b;
-  --color-sable: #c8b99f;
-  --color-casse: #f5f3ee;
-  --color-ivoire: #e8e1d6;
-  --color-papier: #fbfaf7;
-  --color-lin: #efebe3;
-  --color-terre: #b4654a;
-  --color-sauge: #9db09a;
-  --color-encre: #3a3733;
-  --color-gris-clair: #a39d93;
+  /* Direction « Anima vivante » (maquette du 6 novembre 2026) : mêmes noms de
+     couleurs qu'avant, teintes réchauffées, surfaces en verre dépoli. */
+  --color-noir: #16130f;
+  --color-anthracite: #2a2530;
+  --color-gris: #6f685e;
+  --color-sable: #d6c3a3;
+  --color-casse: #f3efe8;
+  --color-ivoire: #ebe2d4;
+  --color-papier: rgb(255 253 249 / 0.72);
+  --color-lin: rgb(235 228 216 / 0.7);
+  --color-terre: #e2774f;
+  --color-sauge: #8fb39a;
+  --color-encre: #3a342c;
+  --color-gris-clair: #b3aba0;
 
-  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
+  /* Couleurs vives des humeurs : les auras et les anneaux en sont faits. */
+  --color-tendre: #e9a7a0;
+  --color-pensif: #8ea2c9;
+  --color-joyeux: #efc56b;
+  --color-lilas: #b9a4dc;
+
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.375rem;
+  --radius-2xl: 1.75rem;
+
+  --font-serif: var(--font-display), "Fraunces", Georgia, serif;
+  --font-sans: var(--font-ui), "Geist", system-ui, sans-serif;
+
+  --animate-monte: monte 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --animate-pop: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
 }
 
 :root {
@@ -25,7 +40,7 @@
   --surface-2: var(--color-lin);
   --texte: var(--color-noir);
   --texte-doux: var(--color-gris);
-  --trait: rgb(21 21 21 / 0.1);
+  --trait: rgb(22 19 15 / 0.09);
   --accent: var(--color-noir);
   --accent-texte: var(--color-casse);
   color-scheme: light;
@@ -52,6 +67,125 @@ body {
   background: var(--fond);
   color: var(--texte);
   font-family: var(--font-sans);
+  isolation: isolate;
+}
+
+/* Fond vivant : trois halos aux couleurs des humeurs qui dérivent lentement,
+   et un grain de papier par-dessus. Purement décoratif. */
+.aura {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aura i {
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.32;
+  animation: flotte 24s ease-in-out infinite alternate;
+}
+.aura i:nth-child(1) { background: var(--color-tendre); left: -12vmax; top: -14vmax; }
+.aura i:nth-child(2) { background: var(--color-pensif); right: -16vmax; top: 12vmax; animation-delay: -8s; }
+.aura i:nth-child(3) { background: var(--color-joyeux); left: 28vmax; bottom: -24vmax; animation-delay: -15s; opacity: 0.22; }
+.aura::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Les surfaces claires deviennent du verre dépoli au-dessus des halos. */
+.bg-papier,
+.bg-lin,
+.bg-fond\/90 {
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+/* Les contenus des pages arrivent en douceur, l'un après l'autre. */
+main > * {
+  animation: var(--animate-monte);
+}
+main > *:nth-child(2) { animation-delay: 0.06s; }
+main > *:nth-child(3) { animation-delay: 0.12s; }
+main > *:nth-child(4) { animation-delay: 0.18s; }
+main > *:nth-child(n + 5) { animation-delay: 0.24s; }
+
+/* Boutons et liens en pilule : petit rebond au toucher. */
+:is(a, button).rounded-full {
+  transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1), opacity 0.2s, background-color 0.2s;
+}
+:is(a, button).rounded-full:active {
+  transform: scale(0.95);
+}
+
+@keyframes flotte { to { transform: translate(6vmax, 4vmax) scale(1.12); } }
+@keyframes monte { from { transform: translateY(14px); opacity: 0.35; } }
+@keyframes pop { from { transform: scale(0.3); } }
+@keyframes valse {
+  33% { transform: translate(18%, -12%) scale(1.1); }
+  66% { transform: translate(-14%, 10%) scale(0.9); }
+}
+@keyframes mot { from { transform: translateY(0.4em); filter: blur(6px); opacity: 0.2; } }
+@keyframes tourne { to { --angle: 360deg; } }
+@keyframes danse { 50% { transform: scaleY(1.12) rotate(-3deg); } }
+@keyframes pouls { 50% { transform: scale(1.35); opacity: 0.6; } }
+
+@property --angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Carte « question du jour » : un halo des humeurs qui bouge derrière le texte. */
+.halo {
+  position: absolute;
+  inset: -40%;
+  z-index: 0;
+  filter: blur(40px) saturate(1.3);
+  opacity: 0.95;
+  pointer-events: none;
+}
+.halo i {
+  position: absolute;
+  width: 55%;
+  height: 55%;
+  border-radius: 50%;
+  animation: valse 10s ease-in-out infinite;
+}
+.halo i:nth-child(1) { background: var(--color-tendre); left: 15%; top: 20%; }
+.halo i:nth-child(2) { background: var(--color-pensif); right: 10%; top: 30%; animation-delay: -3.3s; }
+.halo i:nth-child(3) { background: var(--color-lilas); left: 35%; bottom: 10%; animation-delay: -6.6s; }
+.halo i:nth-child(4) { background: var(--color-joyeux); width: 30%; height: 30%; left: 55%; top: 55%; animation-delay: -2s; opacity: 0.6; }
+.voile {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, rgb(14 10 18 / 0.05), rgb(14 10 18 / 0.45));
+}
+.mot {
+  display: inline-block;
+  animation: mot 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/* Anneau arc-en-ciel autour d'un journal où quelqu'un vient d'écrire. */
+.anneau-neuf {
+  background: conic-gradient(from var(--angle), var(--color-tendre), var(--color-joyeux), var(--color-sauge), var(--color-pensif), var(--color-lilas), var(--color-tendre));
+  animation: tourne 4s linear infinite;
+}
+.flamme { animation: danse 1.4s ease-in-out infinite; transform-origin: 50% 90%; }
+.pouls { animation: pouls 2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 :focus-visible {
@@ -61,8 +195,13 @@ body {
 
 .titre {
   font-family: var(--font-serif);
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  font-variation-settings: "SOFT" 100, "opsz" 96;
+  text-wrap: balance;
+}
+.font-serif {
+  font-variation-settings: "SOFT" 100;
 }
 
 .surtitre {

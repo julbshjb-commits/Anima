@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { MOOD_META, formatLongDate, parseIsoDate, todayIn, toIsoDate, zonedParts, type Mood } from "@anima/core";
+import { MOOD_META, coverOf, formatLongDate, parseIsoDate, todayIn, toIsoDate, zonedParts, type Mood } from "@anima/core";
 import type { Task } from "@/lib/database.types";
 import { getMyMoods, listMyJournals, type JournalCard } from "@/lib/data";
 import { getTodayTasks } from "@/lib/organiser";
@@ -11,7 +11,7 @@ import { relativeTime } from "@/lib/format";
 import { Cover } from "@/components/Cover";
 import { Avatar } from "@/components/Avatar";
 import { IconCadenas, IconCrayon } from "@/components/icons";
-import { btn } from "@/components/ui";
+import { btn, card as surface } from "@/components/ui";
 import { createIntimeJournal } from "../journaux/actions";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
@@ -27,7 +27,7 @@ export default function AujourdhuiPage() {
   );
 }
 
-const card = "rounded-xl bg-papier border border-noir/8 p-7 flex flex-col gap-5 min-w-0";
+const card = `${surface} p-7 flex flex-col gap-5 min-w-0`;
 
 async function Accueil() {
   await connection(); // l'heure et la date dépendent de la requête
@@ -44,7 +44,8 @@ async function Accueil() {
   ]);
   const name = me?.display_name;
   const h = Number(zonedParts(now.toISOString()).time.slice(0, 2));
-  const hello = `${h < 5 || h >= 18 ? "Bonsoir" : "Bonjour"}${name ? `, ${name}` : ""}`;
+  const hello = h < 5 || h >= 18 ? "Bonsoir" : "Bonjour";
+  const streak = streakOf(moods.map((m) => m.entry_date), today);
 
   // Le journal partagé le plus actif : là où quelqu'un d'autre a écrit en dernier.
   const focus = shared.find((j) => j.members.length > 1) ?? shared[0] ?? null;
@@ -55,13 +56,30 @@ async function Accueil() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <p className="surtitre">{formatLongDate(today)}</p>
-          <h1 className="titre text-[44px] leading-[1.05]">{hello}</h1>
+          <h1 className="titre text-[44px] lg:text-[56px] leading-[1.02]">
+            {hello}
+            {name ? (
+              <>
+                , <em className="italic font-light">{name}</em>
+              </>
+            ) : null}
+          </h1>
+          {streak > 1 && (
+            <span className="mt-1 self-start inline-flex items-center gap-1.5 h-8 pl-2.5 pr-3.5 rounded-full bg-papier border border-trait text-[13px] font-medium">
+              <svg className="flamme" width="13" height="15" viewBox="0 0 14 16" aria-hidden>
+                <path d="M7 0C8 4 13 6 13 10.5A6 6 0 0 1 1 10.5C1 8 3 6.5 4 5c.5 2 1.5 3 2.5 3C6 5 6 2.5 7 0z" fill="#e2774f" />
+              </svg>
+              {streak} jours d'affilée
+            </span>
+          )}
         </div>
         <Link href={writeHref} className={btn}>
           <IconCrayon size={16} />
           Écrire
         </Link>
       </header>
+
+      {shared.length > 0 && <Bubbles journals={shared} me={userId} now={now.getTime()} />}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <FocusCard j={focus} me={userId} today={today} />
@@ -112,6 +130,49 @@ async function Accueil() {
   );
 }
 
+/** Jours d'écriture d'affilée, jusqu'à aujourd'hui (ou hier si la page du jour n'est pas encore écrite). */
+function streakOf(dates: string[], today: string) {
+  const set = new Set(dates);
+  const t = parseIsoDate(today);
+  let n = 0;
+  for (let i = set.has(today) ? 0 : 1; ; i++) {
+    const d = toIsoDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - i));
+    if (!set.has(d)) return n;
+    n++;
+  }
+}
+
+/** Les journaux partagés en bulles : un anneau qui tourne quand quelqu'un d'autre y a écrit depuis moins d'un jour. */
+function Bubbles({ journals, me, now }: { journals: JournalCard[]; me: string; now: number }) {
+  const day = now - 24 * 3600 * 1000;
+  const items = journals.map((j) => ({ j, fresh: !!j.last && j.last.author_id !== me && new Date(j.last.created_at).getTime() > day }));
+  items.sort((a, b) => Number(b.fresh) - Number(a.fresh));
+  return (
+    <nav aria-label="Tes journaux partagés" className="-mx-5 lg:-mx-12 px-5 lg:px-12 flex gap-4 overflow-x-auto pb-1 [scrollbar-width:none]">
+      {items.map(({ j, fresh }) => {
+        const c = coverOf(j.cover);
+        return (
+          <Link key={j.id} href={`/journaux/${j.id}`} className="group flex flex-col items-center gap-2 w-[76px] shrink-0 text-center">
+            <span className={`block w-[72px] h-[72px] rounded-full p-[3px] transition-transform duration-300 group-hover:scale-105 group-active:scale-95 ${fresh ? "anneau-neuf" : "bg-trait"}`}>
+              <span
+                className="grid place-items-center w-full h-full rounded-full border-[3px] border-casse font-serif italic text-2xl"
+                style={{ background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,.35), transparent 55%), ${c.bg}`, color: c.fg }}
+              >
+                {j.title.trim().charAt(0).toLocaleUpperCase("fr-FR")}
+              </span>
+            </span>
+            <span className={`text-xs truncate max-w-full ${fresh ? "font-medium" : "text-doux"}`}>{j.title}</span>
+          </Link>
+        );
+      })}
+      <Link href="/journaux/nouveau" className="group flex flex-col items-center gap-2 w-[76px] shrink-0 text-center">
+        <span className="grid place-items-center w-[72px] h-[72px] rounded-full border border-dashed border-noir/25 text-2xl text-doux transition-transform duration-300 group-hover:scale-105 group-hover:rotate-90">+</span>
+        <span className="text-xs text-doux">Créer</span>
+      </Link>
+    </nav>
+  );
+}
+
 function activity(j: JournalCard, me: string) {
   if (!j.last) return "Aucune entrée pour l'instant";
   const who = j.last.author_id === me ? "Tu as écrit" : `${j.members.find((m) => m.id === j.last?.author_id)?.display_name ?? "Quelqu'un"} a écrit`;
@@ -122,11 +183,17 @@ function activity(j: JournalCard, me: string) {
 function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today: string }) {
   if (!j)
     return (
-      <section className="rounded-xl bg-noir text-casse p-8 flex flex-col gap-6 justify-between">
-        <p className="surtitre !text-sable">Journaux à plusieurs</p>
-        <h2 className="titre text-[34px] leading-[1.15] max-w-xl">Écris à deux, entre amis ou en famille : chacun sa page du jour.</h2>
-        <div>
-          <Link href="/journaux/nouveau" className="inline-flex items-center h-11 px-[22px] rounded-full bg-casse text-noir text-sm font-medium">
+      <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-casse p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
+        <div className="halo" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="voile" aria-hidden />
+        <p className="relative surtitre !text-casse/80">Journaux à plusieurs</p>
+        <h2 className="relative titre text-[34px] lg:text-[42px] leading-[1.08] max-w-2xl">Écris à deux, entre amis ou en famille : chacun sa page du jour.</h2>
+        <div className="relative">
+          <Link href="/journaux/nouveau" className="inline-flex items-center h-12 px-6 rounded-full bg-casse text-noir text-sm font-semibold">
             Créer un journal partagé
           </Link>
         </div>
@@ -134,22 +201,46 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
     );
   const other = j.last && j.last.author_id !== me && zonedParts(j.last.created_at).day === today ? j.members.find((m) => m.id === j.last?.author_id) : undefined;
   return (
-    <section className="rounded-xl bg-noir text-casse p-8 flex flex-col gap-6 justify-between">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="surtitre !text-sable">Aujourd'hui · {j.title}</p>
+    <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-casse p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
+      <div className="halo" aria-hidden>
+        <i />
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className="voile" aria-hidden />
+      <div className="relative flex flex-wrap items-center justify-between gap-3">
+        <p className="surtitre !text-casse/80">Question du jour · {j.title}</p>
         {other && (
-          <span className="flex items-center gap-2 text-[13px] text-gris-clair">
-            <Avatar name={other.display_name} index={1} size={22} />
+          <span className="flex items-center gap-2 text-[13px] text-casse/90">
+            <span className="relative">
+              <span className="pouls absolute inset-0 rounded-full bg-tendre/60" aria-hidden />
+              <span className="relative block rounded-full ring-2 ring-casse/40">
+                <Avatar name={other.display_name} index={1} size={24} />
+              </span>
+            </span>
             {other.display_name} a déjà écrit
           </span>
         )}
       </div>
-      <h2 className="titre text-[34px] leading-[1.15] max-w-xl">Qu'est-ce qui a compté aujourd'hui, même un tout petit peu ?</h2>
-      <div className="flex flex-wrap items-center gap-4">
-        <Link href={`/journaux/${j.id}/ecrire?date=${today}`} className="inline-flex items-center h-11 px-[22px] rounded-full bg-casse text-noir text-sm font-medium">
+      <h2 className="relative titre text-[34px] lg:text-[42px] leading-[1.08] max-w-2xl">
+        {QUESTION.split(" ").map((w, i) => (
+          <span key={i}>
+            <span className="mot" style={{ animationDelay: `${0.15 + i * 0.07}s` }}>
+              {w}
+            </span>{" "}
+          </span>
+        ))}
+      </h2>
+      <div className="relative flex flex-wrap items-center gap-4">
+        <Link
+          href={`/journaux/${j.id}/ecrire?date=${today}`}
+          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-casse text-noir text-sm font-semibold shadow-[0_12px_30px_-10px_rgba(0,0,0,.5)] hover:-translate-y-0.5"
+        >
+          <IconCrayon size={16} />
           Écrire ma page
         </Link>
-        <Link href={`/journaux/${j.id}`} className="text-[13px] text-gris-clair hover:text-casse">
+        <Link href={`/journaux/${j.id}`} className="text-[13px] text-casse/75 hover:text-casse underline-offset-4 hover:underline">
           Lire le journal
         </Link>
       </div>
@@ -157,9 +248,11 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
   );
 }
 
+const QUESTION = "Qu'est-ce qui a compté aujourd'hui, même un tout petit peu ?";
+
 function IntimeCard({ j }: { j: JournalCard | null }) {
   return (
-    <section className="rounded-xl bg-anthracite text-casse p-7 flex flex-col gap-5 justify-between">
+    <section className="relative isolate overflow-hidden rounded-2xl bg-anthracite text-casse p-7 flex flex-col gap-5 justify-between bg-[radial-gradient(circle_at_85%_10%,rgba(185,164,220,.35),transparent_55%),radial-gradient(circle_at_10%_100%,rgba(142,162,201,.25),transparent_50%)]">
       <div className="flex items-center justify-between">
         <p className="surtitre !text-gris-clair">Mon journal intime</p>
         <span className="text-sable">
@@ -263,7 +356,7 @@ function MoodWeeks({ monday, today, moods }: { monday: Date; today: string; mood
             {d}
           </span>
         ))}
-        {days.map((d) => {
+        {days.map((d, i) => {
           const has = byDay.has(d);
           const mood = byDay.get(d) ?? null;
           const future = d > today;
@@ -273,8 +366,8 @@ function MoodWeeks({ monday, today, moods }: { monday: Date; today: string; mood
               key={d}
               title={label}
               aria-label={label}
-              className={`aspect-square rounded-md ${has ? "" : future ? "" : "shadow-[inset_0_0_0_1px_rgba(21,21,21,.12)]"} ${d === today ? "!shadow-[0_0_0_2px_#F5F3EE,0_0_0_3px_#151515]" : ""}`}
-              style={has ? { background: mood ? MOOD_META[mood].color : "#E8E1D6", opacity: mood && DARK.includes(mood) ? 1 : undefined } : undefined}
+              className={`aspect-square rounded-[9px] animate-pop ${has ? "" : future ? "" : "shadow-[inset_0_0_0_1px_rgba(21,21,21,.12)]"} ${d === today ? "!shadow-[0_0_0_2px_#F3EFE8,0_0_0_3px_#16130F]" : ""}`}
+              style={{ animationDelay: `${0.3 + i * 0.02}s`, ...(has ? { background: mood ? MOOD_META[mood].color : "#E8E1D6", opacity: mood && DARK.includes(mood) ? 1 : undefined } : {}) }}
             />
           );
         })}

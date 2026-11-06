@@ -1,15 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Fraunces, Geist } from "next/font/google";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
+// Direction « Anima vivante » : une serif ronde et douce (axe SOFT) pour les titres,
+// une sans nette pour l'interface.
+const fraunces = Fraunces({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
   style: ["normal", "italic"],
+  axes: ["SOFT", "opsz"],
 });
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const geist = Geist({ variable: "--font-ui", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: "Anima", template: "%s · Anima" },
@@ -18,13 +20,20 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F5F3EE",
+  themeColor: "#F3EFE8",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${cormorant.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="fr" className={`${fraunces.variable} ${geist.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">
+        <div className="aura" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </div>
+        {children}
+      </body>
     </html>
   );
 }
