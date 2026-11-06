@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBibliotheque, IconCercles, IconCle, IconCoche, IconDossier, IconJournaux, IconNotes, IconReglages, IconSoleil } from "./icons";
+import { IconBibliotheque, IconBoussole, IconCercles, IconCle, IconCloche, IconCoche, IconDossier, IconJournaux, IconNotes, IconReglages, IconSoleil } from "./icons";
 
 const LINKS = [
   { href: "/aujourdhui", label: "Aujourd'hui", Icon: IconSoleil, match: (p: string) => p.startsWith("/aujourdhui") },
+  { href: "/decouvrir", label: "Découvrir", Icon: IconBoussole, match: (p: string) => p.startsWith("/decouvrir") || p.startsWith("/u/") || p.startsWith("/p/") },
   { href: "/journaux", label: "Journaux", Icon: IconJournaux, match: (p: string) => p.startsWith("/journaux") },
   { href: "/organiser", label: "Organiser", Icon: IconCoche, match: (p: string) => p.startsWith("/organiser") },
   { href: "/notes", label: "Notes", Icon: IconNotes, match: (p: string) => p.startsWith("/notes") },
@@ -19,22 +20,32 @@ const active = "bg-papier text-noir font-medium";
 const idle = "text-encre hover:bg-lin hover:translate-x-0.5";
 
 /** Liens de la barre latérale : seules les rubriques qui existent vraiment. */
-export function MenuLinks() {
+export function MenuLinks({ unread = 0 }: { unread?: number }) {
   const path = usePathname();
+  const links = [
+    ...LINKS.slice(0, 2),
+    { href: "/notifications", label: "Notifications", Icon: IconCloche, match: (p: string) => p.startsWith("/notifications") },
+    ...LINKS.slice(2),
+  ];
   return (
     <div className="flex flex-col gap-0.5">
-      {LINKS.map(({ href, label, Icon, match }) => (
+      {links.map(({ href, label, Icon, match }) => (
         <Link key={href} href={href} aria-current={match(path) ? "page" : undefined} className={`${item} ${match(path) ? active : idle}`}>
           <Icon />
           {label}
-          {match(path) && <span aria-hidden className="ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />}
+          {href === "/notifications" && unread > 0 ? (
+            <span className="ml-auto min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-champagne text-nuit text-[11px] font-semibold tabular-nums">{unread > 99 ? "99+" : unread}</span>
+          ) : (
+            match(path) && <span aria-hidden className="ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />
+          )}
         </Link>
       ))}
     </div>
   );
 }
 
-const TABS = [LINKS[0], LINKS[1], LINKS[3], LINKS[2], LINKS[4]] as const;
+/** Onglets du bas : Aujourd'hui, Découvrir, Journaux, Notes, Organiser. */
+const TABS = [LINKS[0], LINKS[1], LINKS[2], LINKS[4], LINKS[3]] as const;
 
 /** Barre d'onglets flottante (téléphone et iPad en portrait). */
 export function TabBar() {

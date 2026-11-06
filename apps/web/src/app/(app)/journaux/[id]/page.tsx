@@ -89,9 +89,17 @@ async function Journal({ params, searchParams }: PageProps<"/journaux/[id]">) {
                     </span>
                   )}
                   {canWrite && e.author_id === user.id && (
-                    <Link href={`/journaux/${journal.id}/entree/${e.id}`} className="ml-auto text-[13px] text-doux hover:text-noir underline-offset-4 hover:underline">
-                      Modifier
-                    </Link>
+                    <span className="ml-auto flex items-center gap-4">
+                      {/* Le journal intime n'est jamais publiable sur le réseau. */}
+                      {!isIntime && (
+                        <Link href={`/decouvrir?entree=${e.id}`} className="text-[13px] text-champagne hover:underline underline-offset-4">
+                          Publier
+                        </Link>
+                      )}
+                      <Link href={`/journaux/${journal.id}/entree/${e.id}`} className="text-[13px] text-doux hover:text-noir underline-offset-4 hover:underline">
+                        Modifier
+                      </Link>
+                    </span>
                   )}
                 </div>
                 {e.title && <h2 className="titre text-[36px] leading-[1.1]">{e.title}</h2>}

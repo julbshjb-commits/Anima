@@ -11,4 +11,4 @@ $RUN "$PGBIN/pg_ctl" -D "$DIR" -o "-p 54329 -k /tmp -c listen_addresses=''" -l "
 PSQL="psql -h /tmp -p 54329 -U postgres -d postgres -q -v ON_ERROR_STOP=1"
 $PSQL -f "$ROOT/supabase/tests/00_stub_supabase.sql"
 for f in "$ROOT"/supabase/migrations/*.sql; do $PSQL -f "$f"; done
-$PSQL -f "$ROOT/supabase/tests/10_rls_test.sql"
+for f in "$ROOT"/supabase/tests/[1-9]*.sql; do $PSQL -f "$f"; done
