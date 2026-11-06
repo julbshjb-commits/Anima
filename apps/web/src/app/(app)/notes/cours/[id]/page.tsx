@@ -112,6 +112,15 @@ async function Cours({ params, searchParams }: PageProps<"/notes/cours/[id]">) {
             </span>
           </Link>
         )}
+        {current && (
+          <Link
+            href={`/flashcards/generer?note=${current.id}`}
+            className="rounded-xl bg-papier border border-champagne/25 px-4 py-3 flex flex-col hover:border-champagne/50 transition-colors"
+          >
+            <span className="text-sm font-medium">Faire des flashcards</span>
+            <span className="text-xs text-doux">Avec cette séance</span>
+          </Link>
+        )}
         <section className="flex flex-col gap-1 min-w-0">
           <h2 className="surtitre mb-1.5">Séances</h2>
           <div className="flex lg:flex-col gap-1 max-lg:overflow-x-auto max-lg:-mx-5 max-lg:px-5 max-lg:pb-1">

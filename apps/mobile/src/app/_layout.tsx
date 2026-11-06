@@ -55,6 +55,8 @@ function Navigation() {
           <Stack.Screen name="nouveau" options={{ title: 'Nouveau journal', presentation: 'modal' }} />
           <Stack.Screen name="rejoindre" options={{ title: 'Rejoindre', presentation: 'modal' }} />
           <Stack.Screen name="compte" options={{ title: 'Compte' }} />
+          <Stack.Screen name="flashcards/index" options={{ title: 'Flashcards' }} />
+          <Stack.Screen name="flashcards/reviser" options={{ title: 'Révision', presentation: 'fullScreenModal' }} />
           <Stack.Screen name="journal/[id]/index" options={{ title: '' }} />
           <Stack.Screen name="journal/[id]/ecrire" options={{ title: 'Écrire', presentation: 'modal' }} />
           <Stack.Screen name="journal/[id]/inviter" options={{ title: 'Inviter', presentation: 'modal' }} />

@@ -467,6 +467,11 @@ function Panel({ detail, drive, p }: { detail: FileDetail; drive: Drive; p: Para
           <a href={`/fichiers/ouvrir/${file.id}?telecharger=1`} className={`${btn} border border-noir/15 hover:bg-lin`}>
             Télécharger
           </a>
+          {(file.mime_type === "application/pdf" || file.mime_type.startsWith("text/")) && (
+            <a href={`/flashcards/generer?fichier=${file.id}`} className={`${btn} border border-champagne/30 text-champagne hover:bg-champagne/10`}>
+              Faire des flashcards
+            </a>
+          )}
           {mine && (
             <>
               <LinkNote id={file.id} noteId={file.note_id} notes={detail.notes} />

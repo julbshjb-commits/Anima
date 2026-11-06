@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { LegalFooter } from "@/components/LegalPage";
 import { MenuLinks, SettingsLink, TabBar } from "@/components/MenuLinks";
-import { IconBibliotheque, IconCle, IconDossier, IconReglages } from "@/components/icons";
+import { IconBibliotheque, IconCartes, IconCle, IconDossier, IconReglages } from "@/components/icons";
 
 /** Écrans de navigation (journaux, rejoindre, compte) : barre latérale des maquettes. */
 export default function MenuLayout({ children }: LayoutProps<"/">) {
@@ -29,6 +29,9 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
       <header className="lg:hidden sticky top-0 z-10 h-14 px-4 flex items-center gap-1 border-b border-trait bg-fond/90">
         <Link href="/aujourdhui" className="titre italic text-[26px] mr-auto champagne">
           anima
+        </Link>
+        <Link href="/flashcards" aria-label="Flashcards" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
+          <IconCartes />
         </Link>
         <Link href="/bibliotheque" aria-label="Bibliothèque" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
           <IconBibliotheque />
