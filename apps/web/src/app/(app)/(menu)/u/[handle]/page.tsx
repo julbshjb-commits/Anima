@@ -11,10 +11,7 @@ import { IconCadenas, IconRetour } from "@/components/icons";
 import { btn, btnGhost } from "@/components/ui";
 import { follow, unblock, unfollow } from "../../decouvrir/actions";
 
-export async function generateMetadata({ params }: PageProps<"/u/[handle]">): Promise<Metadata> {
-  const { handle } = await params;
-  return { title: `@${decodeURIComponent(handle)}` };
-}
+export const metadata: Metadata = { title: "Profil" };
 
 export default function UserPage(props: PageProps<"/u/[handle]">) {
   return (
