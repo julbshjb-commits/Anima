@@ -163,7 +163,7 @@ async function Fichiers({ searchParams }: PageProps<"/fichiers">) {
 function Sidebar({ drive, p }: { drive: Drive; p: Params }) {
   const item =
     "flex items-center gap-3 h-10 px-2.5 rounded-lg text-sm shrink-0";
-  const on = "bg-papier shadow-[0_0_0_1px_rgba(21,21,21,.08)] font-medium";
+  const on = "bg-papier shadow-[0_0_0_1px_var(--trait)] font-medium";
   const off = "text-encre hover:bg-lin";
   const pct = drive.quota
     ? Math.min(100, Math.max(drive.used > 0 ? 1 : 0, Math.round((drive.used / drive.quota) * 100)))
@@ -232,7 +232,7 @@ function Sidebar({ drive, p }: { drive: Drive; p: Params }) {
 
 function Toolbar({ drive, p }: { drive: Drive; p: Params }) {
   const toggle =
-    "w-9 h-8 rounded-full grid place-items-center aria-[current=true]:bg-papier aria-[current=true]:shadow-[0_0_0_1px_rgba(21,21,21,.08)]";
+    "w-9 h-8 rounded-full grid place-items-center aria-[current=true]:bg-papier aria-[current=true]:shadow-[0_0_0_1px_var(--trait)]";
   return (
     <div className="flex flex-wrap items-center gap-3">
       <nav aria-label="Chemin" className="flex-1 max-sm:basis-full min-w-0 flex flex-wrap items-center gap-2 text-[15px]">
@@ -283,7 +283,7 @@ function Badge({ mime, size = 30 }: { mime: string; size?: number }) {
   return (
     <span
       aria-hidden
-      className="shrink-0 grid place-items-center rounded-md text-[9px] font-semibold tracking-wide text-casse"
+      className="shrink-0 grid place-items-center rounded-md text-[9px] font-semibold tracking-wide text-blanc"
       style={{ width: size, height: size, background: t.color, fontSize: size > 40 ? 13 : 9 }}
     >
       {t.badge}

@@ -167,7 +167,7 @@ export function EntryForm({ journalId, date: initialDate, userId, visibility, en
           maxLength={50000}
           aria-label="Ton entrée"
           placeholder="Qu'est-ce qui a compté aujourd'hui ?"
-          className="w-full min-h-[40vh] [field-sizing:content] resize-none bg-transparent border-0 p-0 font-serif text-xl leading-[1.65] text-[#1E1C1A] focus:outline-none placeholder:italic placeholder:text-[#6F6A63]"
+          className="w-full min-h-[40vh] [field-sizing:content] resize-none bg-transparent border-0 p-0 font-serif text-xl leading-[1.65] text-encre focus:outline-none placeholder:italic placeholder:text-doux"
         />
 
         {(kept.length > 0 || previews.length > 0 || removed.length > 0) && (

@@ -129,7 +129,7 @@ async function NoteView({ params }: PageProps<"/notes/[id]">) {
               >
                 <span
                   aria-hidden
-                  className="w-6 h-6 rounded grid place-items-center text-[8px] font-semibold text-casse shrink-0"
+                  className="w-6 h-6 rounded grid place-items-center text-[8px] font-semibold text-blanc shrink-0"
                   style={{ background: fileType(f.mime_type).color }}
                 >
                   {fileType(f.mime_type).badge}

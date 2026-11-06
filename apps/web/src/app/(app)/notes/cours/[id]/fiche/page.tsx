@@ -74,7 +74,7 @@ async function Fiche({ params }: PageProps<"/notes/cours/[id]/fiche">) {
                 </div>
               ))}
             {questions.length > 0 && (
-              <ul className="rounded-xl bg-[#E8E1D6] px-4 py-3 text-sm flex flex-col gap-1">
+              <ul className="rounded-xl bg-ivoire px-4 py-3 text-sm flex flex-col gap-1">
                 {questions.map((q) => (
                   <li key={q.id}>
                     {q.done_at ? "✓" : "?"} {q.content}

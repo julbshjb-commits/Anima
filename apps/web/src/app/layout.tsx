@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist } from "next/font/google";
 import "./globals.css";
+import { Spotlight } from "@/components/Spotlight";
 
 // Direction « Anima vivante » : une serif ronde et douce (axe SOFT) pour les titres,
 // une sans nette pour l'interface.
@@ -16,11 +17,11 @@ const geist = Geist({ variable: "--font-ui", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: { default: "Anima", template: "%s · Anima" },
   description: "Ton journal intime et vos journaux partagés. Privé par défaut, hébergé en Europe.",
-  appleWebApp: { capable: true, title: "Anima", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Anima", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F3EFE8",
+  themeColor: "#0D0B11",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <i />
           <i />
         </div>
+        <Spotlight />
         {children}
       </body>
     </html>

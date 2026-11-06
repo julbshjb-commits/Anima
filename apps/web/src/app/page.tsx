@@ -6,7 +6,7 @@ export default function Accueil() {
   return (
     <main className="flex-1 flex flex-col">
       <header className="px-6 md:px-12 py-6 flex items-center justify-between">
-        <span className="titre text-2xl">Anima</span>
+        <span className="titre italic text-3xl champagne">anima</span>
         <Link href="/connexion" className="text-sm font-medium underline-offset-4 hover:underline">
           Se connecter
         </Link>
@@ -16,7 +16,7 @@ export default function Accueil() {
         <h1 className="titre text-5xl md:text-7xl leading-[1.02]">
           Écrire sa vie,
           <br />
-          seul ou à plusieurs.
+          <em className="italic champagne pr-3">seul ou à plusieurs.</em>
         </h1>
         <p className="text-lg text-doux max-w-xl leading-relaxed">
           Un journal intime qui reste à toi, et des journaux à deux, entre amis ou en famille, où chacun écrit sa

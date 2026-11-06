@@ -60,7 +60,7 @@ async function Accueil() {
             {hello}
             {name ? (
               <>
-                , <em className="italic font-light">{name}</em>
+                , <em className="italic font-light champagne pr-2">{name}</em>
               </>
             ) : null}
           </h1>
@@ -153,7 +153,7 @@ function Bubbles({ journals, me, now }: { journals: JournalCard[]; me: string; n
         const c = coverOf(j.cover);
         return (
           <Link key={j.id} href={`/journaux/${j.id}`} className="group flex flex-col items-center gap-2 w-[76px] shrink-0 text-center">
-            <span className={`block w-[72px] h-[72px] rounded-full p-[3px] transition-transform duration-300 group-hover:scale-105 group-active:scale-95 ${fresh ? "anneau-neuf" : "bg-trait"}`}>
+            <span className={`block w-[72px] h-[72px] rounded-full p-[3px] transition-transform duration-300 group-hover:scale-105 group-active:scale-95 ${fresh ? "anneau-neuf" : "bg-[rgba(255,255,255,.08)]"}`}>
               <span
                 className="grid place-items-center w-full h-full rounded-full border-[3px] border-casse font-serif italic text-2xl"
                 style={{ background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,.35), transparent 55%), ${c.bg}`, color: c.fg }}
@@ -166,7 +166,7 @@ function Bubbles({ journals, me, now }: { journals: JournalCard[]; me: string; n
         );
       })}
       <Link href="/journaux/nouveau" className="group flex flex-col items-center gap-2 w-[76px] shrink-0 text-center">
-        <span className="grid place-items-center w-[72px] h-[72px] rounded-full border border-dashed border-noir/25 text-2xl text-doux transition-transform duration-300 group-hover:scale-105 group-hover:rotate-90">+</span>
+        <span className="grid place-items-center w-[72px] h-[72px] rounded-full border border-dashed border-noir/20 text-2xl text-doux transition-transform duration-300 group-hover:scale-105 group-hover:rotate-90">+</span>
         <span className="text-xs text-doux">Créer</span>
       </Link>
     </nav>
@@ -183,17 +183,17 @@ function activity(j: JournalCard, me: string) {
 function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today: string }) {
   if (!j)
     return (
-      <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-casse p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
+      <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-blanc p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
         <div className="halo" aria-hidden>
           <i />
           <i />
           <i />
         </div>
         <div className="voile" aria-hidden />
-        <p className="relative surtitre !text-casse/80">Journaux à plusieurs</p>
+        <p className="relative surtitre !text-blanc/80">Journaux à plusieurs</p>
         <h2 className="relative titre text-[34px] lg:text-[42px] leading-[1.08] max-w-2xl">Écris à deux, entre amis ou en famille : chacun sa page du jour.</h2>
         <div className="relative">
-          <Link href="/journaux/nouveau" className="inline-flex items-center h-12 px-6 rounded-full bg-casse text-noir text-sm font-semibold">
+          <Link href="/journaux/nouveau" className="inline-flex items-center h-12 px-6 rounded-full bg-blanc text-nuit text-sm font-semibold">
             Créer un journal partagé
           </Link>
         </div>
@@ -201,7 +201,7 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
     );
   const other = j.last && j.last.author_id !== me && zonedParts(j.last.created_at).day === today ? j.members.find((m) => m.id === j.last?.author_id) : undefined;
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-casse p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
+    <section className="relative isolate overflow-hidden rounded-2xl bg-[#16121c] text-blanc p-8 lg:p-10 flex flex-col gap-6 justify-between min-h-[300px]">
       <div className="halo" aria-hidden>
         <i />
         <i />
@@ -210,12 +210,12 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
       </div>
       <div className="voile" aria-hidden />
       <div className="relative flex flex-wrap items-center justify-between gap-3">
-        <p className="surtitre !text-casse/80">Question du jour · {j.title}</p>
+        <p className="surtitre !text-blanc/80">Question du jour · {j.title}</p>
         {other && (
-          <span className="flex items-center gap-2 text-[13px] text-casse/90">
+          <span className="flex items-center gap-2 text-[13px] text-blanc/90">
             <span className="relative">
               <span className="pouls absolute inset-0 rounded-full bg-tendre/60" aria-hidden />
-              <span className="relative block rounded-full ring-2 ring-casse/40">
+              <span className="relative block rounded-full ring-2 ring-blanc/40">
                 <Avatar name={other.display_name} index={1} size={24} />
               </span>
             </span>
@@ -235,12 +235,12 @@ function FocusCard({ j, me, today }: { j: JournalCard | null; me: string; today:
       <div className="relative flex flex-wrap items-center gap-4">
         <Link
           href={`/journaux/${j.id}/ecrire?date=${today}`}
-          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-casse text-noir text-sm font-semibold shadow-[0_12px_30px_-10px_rgba(0,0,0,.5)] hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-blanc text-nuit text-sm font-semibold shadow-[0_12px_30px_-10px_rgba(0,0,0,.5)] hover:-translate-y-0.5"
         >
           <IconCrayon size={16} />
           Écrire ma page
         </Link>
-        <Link href={`/journaux/${j.id}`} className="text-[13px] text-casse/75 hover:text-casse underline-offset-4 hover:underline">
+        <Link href={`/journaux/${j.id}`} className="text-[13px] text-blanc/75 hover:text-blanc underline-offset-4 hover:underline">
           Lire le journal
         </Link>
       </div>
@@ -252,7 +252,7 @@ const QUESTION = "Qu'est-ce qui a compté aujourd'hui, même un tout petit peu ?
 
 function IntimeCard({ j }: { j: JournalCard | null }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl bg-anthracite text-casse p-7 flex flex-col gap-5 justify-between bg-[radial-gradient(circle_at_85%_10%,rgba(185,164,220,.35),transparent_55%),radial-gradient(circle_at_10%_100%,rgba(142,162,201,.25),transparent_50%)]">
+    <section className="relative isolate overflow-hidden rounded-2xl bg-anthracite text-blanc p-7 flex flex-col gap-5 justify-between bg-[radial-gradient(circle_at_85%_10%,rgba(185,164,220,.35),transparent_55%),radial-gradient(circle_at_10%_100%,rgba(142,162,201,.25),transparent_50%)]">
       <div className="flex items-center justify-between">
         <p className="surtitre !text-gris-clair">Mon journal intime</p>
         <span className="text-sable">
@@ -268,12 +268,12 @@ function IntimeCard({ j }: { j: JournalCard | null }) {
       </div>
       <div>
         {j ? (
-          <Link href={`/journaux/${j.id}`} className="inline-flex items-center h-11 px-5 rounded-full border border-casse/30 text-sm hover:bg-casse/10">
+          <Link href={`/journaux/${j.id}`} className="inline-flex items-center h-11 px-5 rounded-full border border-blanc/25 text-sm hover:bg-blanc/10">
             Ouvrir
           </Link>
         ) : (
           <form action={createIntimeJournal}>
-            <button type="submit" className="inline-flex items-center h-11 px-5 rounded-full border border-casse/30 text-sm hover:bg-casse/10">
+            <button type="submit" className="inline-flex items-center h-11 px-5 rounded-full border border-blanc/25 text-sm hover:bg-blanc/10">
               Le créer
             </button>
           </form>
@@ -366,7 +366,7 @@ function MoodWeeks({ monday, today, moods }: { monday: Date; today: string; mood
               key={d}
               title={label}
               aria-label={label}
-              className={`aspect-square rounded-[9px] animate-pop ${has ? "" : future ? "" : "shadow-[inset_0_0_0_1px_rgba(21,21,21,.12)]"} ${d === today ? "!shadow-[0_0_0_2px_#F3EFE8,0_0_0_3px_#16130F]" : ""}`}
+              className={`aspect-square rounded-[9px] animate-pop ${has ? "" : future ? "" : "shadow-[inset_0_0_0_1px_var(--trait)]"} ${d === today ? "!shadow-[0_0_0_2px_var(--color-casse),0_0_0_3px_var(--color-noir)]" : ""}`}
               style={{ animationDelay: `${0.3 + i * 0.02}s`, ...(has ? { background: mood ? MOOD_META[mood].color : "#E8E1D6", opacity: mood && DARK.includes(mood) ? 1 : undefined } : {}) }}
             />
           );

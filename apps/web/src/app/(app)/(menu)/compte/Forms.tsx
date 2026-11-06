@@ -33,7 +33,7 @@ export function DeleteForm() {
       </label>
       {state.error && <p role="alert" className="text-sm text-terre">{state.error}</p>}
       <div>
-        <button type="submit" disabled={pending} className={`${btn} !bg-terre !text-casse`}>
+        <button type="submit" disabled={pending} className={`${btn} !bg-terre !text-blanc`}>
           {pending ? "Suppression…" : "Supprimer définitivement mon compte"}
         </button>
       </div>

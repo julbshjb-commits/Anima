@@ -127,7 +127,7 @@ export function Composer({
             rows={2}
             placeholder="« Chaque homme porte la forme entière de l'humaine condition. »"
             aria-label="Citation"
-            className="w-full [field-sizing:content] resize-none rounded-lg bg-[#E8E1D6] p-3 font-serif italic text-lg focus:outline-none"
+            className="w-full [field-sizing:content] resize-none rounded-lg bg-ivoire p-3 font-serif italic text-lg focus:outline-none"
           />
           <input
             name="quoteSource"
@@ -312,7 +312,7 @@ export function InviteToCircle({
           </p>
           <button
             type="button"
-            className="self-start h-8 px-3 rounded-full bg-casse text-noir text-xs font-medium"
+            className="self-start h-8 px-3 rounded-full bg-blanc text-nuit text-xs font-medium"
             onClick={async () => {
               await navigator.clipboard.writeText(
                 `Rejoins notre cercle « ${name} » sur Anima avec le code ${formatInviteCode(state.code!)} (valable 48 h).`,

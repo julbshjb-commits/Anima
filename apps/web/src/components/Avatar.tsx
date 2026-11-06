@@ -1,8 +1,8 @@
 /** Pastilles d'initiales des membres, comme la « pile d'avatars » du design system. */
 const TONES = [
-  "bg-ivoire text-noir",
-  "bg-sable text-noir",
-  "bg-anthracite text-casse",
+  "bg-[linear-gradient(135deg,#ecd4a6,#b38c55)] text-nuit",
+  "bg-[linear-gradient(135deg,#efbfb5,#b46f7c)] text-nuit",
+  "bg-[linear-gradient(135deg,#a597cf,#54467f)] text-blanc",
 ];
 
 export function initial(name: string | null | undefined) {

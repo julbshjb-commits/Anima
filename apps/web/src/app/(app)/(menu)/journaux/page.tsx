@@ -80,7 +80,7 @@ async function Journaux({ searchParams }: PageProps<"/journaux">) {
         (intime ? (
           <Link
             href={`/journaux/${intime.id}`}
-            className="flex flex-wrap items-center gap-5 rounded-xl bg-anthracite text-casse px-6 py-5 hover:bg-noir transition-colors"
+            className="flex flex-wrap items-center gap-5 rounded-xl bg-anthracite text-blanc px-6 py-5 border border-trait hover:bg-ivoire transition-colors"
           >
             <IntimeLock />
             <span className="flex-1 min-w-52 flex flex-col gap-1">
@@ -90,10 +90,10 @@ async function Journaux({ searchParams }: PageProps<"/journaux">) {
                 {intime.last ? `dernière entrée ${relativeTime(intime.last.created_at)}` : "pas encore d'entrée"}
               </span>
             </span>
-            <span className="inline-flex items-center h-10 px-[18px] rounded-full border border-casse/30 text-sm">Ouvrir</span>
+            <span className="inline-flex items-center h-10 px-[18px] rounded-full border border-blanc/25 text-sm">Ouvrir</span>
           </Link>
         ) : (
-          <form action={createIntimeJournal} className="flex flex-wrap items-center gap-5 rounded-xl bg-anthracite text-casse px-6 py-5">
+          <form action={createIntimeJournal} className="flex flex-wrap items-center gap-5 rounded-xl bg-anthracite text-blanc px-6 py-5">
             <IntimeLock />
             <span className="flex-1 min-w-52 flex flex-col gap-1">
               <span className="titre text-[26px] leading-tight">Ton journal intime</span>
@@ -101,7 +101,7 @@ async function Journaux({ searchParams }: PageProps<"/journaux">) {
                 Personne d'autre ne peut le lire, et il ne se partage jamais. Aucune IA n'y a accès.
               </span>
             </span>
-            <button type="submit" className="inline-flex items-center h-10 px-[18px] rounded-full bg-casse text-noir text-sm font-medium">
+            <button type="submit" className="inline-flex items-center h-10 px-[18px] rounded-full bg-blanc text-nuit text-sm font-medium">
               Le créer
             </button>
           </form>
