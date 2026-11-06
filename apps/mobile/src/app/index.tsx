@@ -59,6 +59,18 @@ export default function Journaux() {
           </View>
           <ErrorText>{error}</ErrorText>
 
+          <Link href="/flashcards" asChild>
+            <Pressable accessibilityRole="link" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Title size={22}>Flashcards</Title>
+                  <Text style={{ fontFamily: fonts.texte, fontSize: 13, color: c.doux }}>Réviser les cartes du jour</Text>
+                </View>
+                <Text style={{ fontFamily: fonts.texteMoyen, color: c.champagne }}>Réviser</Text>
+              </Card>
+            </Pressable>
+          </Link>
+
           <View style={{ gap: 12 }}>
             <Overline>Pour toi seul</Overline>
             {data?.intime ? (

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Export des données personnelles (RGPD, article 20) : profil, journaux dont
- * on est membre, toutes les entrées qu'on a écrites, l'organisation, les notes, les cercles, la bibliothèque et la liste des fichiers, au format JSON.
+ * on est membre, toutes les entrées qu'on a écrites, l'organisation, les notes, les cercles, la bibliothèque, les flashcards et la liste des fichiers, au format JSON.
  */
 export async function GET() {
   // Jamais prérendu au build : la réponse dépend de la session de la personne.
@@ -13,7 +13,7 @@ export async function GET() {
   if (!auth.user) return NextResponse.json({ error: "non connecté" }, { status: 401 });
   const uid = auth.user.id;
 
-  const [profile, memberships, entries, attachments, projects, tasks, events, rituals, checks, notebooks, notes, blocks, circles, posts, comments, reactions, works, quotes, goals, folders, files] = await Promise.all([
+  const [profile, memberships, entries, attachments, projects, tasks, events, rituals, checks, notebooks, notes, blocks, circles, posts, comments, reactions, works, quotes, goals, folders, files, decks, cards, schedules, reviews] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
     supabase.from("journal_members").select("role, joined_at, journal:journals(id, title, kind, created_at)").eq("user_id", uid),
     supabase
@@ -40,6 +40,10 @@ export async function GET() {
     supabase.from("reading_goals").select("year, target").eq("owner_id", uid),
     supabase.from("folders").select("id, parent_id, name, created_at").eq("owner_id", uid),
     supabase.from("files").select("id, folder_id, name, mime_type, size_bytes, starred, note_id, trashed_at, created_at").eq("owner_id", uid),
+    supabase.from("decks").select("*").eq("owner_id", uid),
+    supabase.from("cards").select("*").eq("owner_id", uid),
+    supabase.from("card_schedules").select("card_id, variant, state, due_at, interval_days, ease, reps, lapses, last_reviewed_at").eq("owner_id", uid),
+    supabase.from("card_reviews").select("schedule_id, deck_id, rating, state_before, interval_before, interval_after, duration_ms, reviewed_at").eq("owner_id", uid),
   ]);
 
   const body = {
@@ -53,6 +57,7 @@ export async function GET() {
     bibliotheque: { oeuvres: works.data, citations: quotes.data, objectifs: goals.data },
     fichiers: { dossiers: folders.data, fichiers: files.data, note: "Le contenu de chaque fichier se télécharge depuis Mes fichiers." },
     cercles: { cercles: circles.data, publications: posts.data, commentaires: comments.data, reactions: reactions.data },
+    flashcards: { paquets: decks.data, cartes: cards.data, revisions: schedules.data, historique: reviews.data },
     notes: { carnets: notebooks.data, notes: notes.data, passages_de_seance: blocks.data },
   };
   return new NextResponse(JSON.stringify(body, null, 2), {

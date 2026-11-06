@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@anima/core": "workspace:*",
+    "@anthropic-ai/sdk": "^1.6.0",
     "@modelcontextprotocol/server": "^2.4.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",

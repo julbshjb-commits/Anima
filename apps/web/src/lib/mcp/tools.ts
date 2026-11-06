@@ -13,6 +13,9 @@ import {
   zonedParts,
   zonedToIso,
   MOODS,
+  AI_CARD_RULES,
+  cardSchema,
+  dayBounds,
   type AiSpace,
 } from "@anima/core";
 import { tokenClient, type TokenClient } from "./auth";
@@ -454,5 +457,74 @@ export function registerAnimaTools(server: McpServer) {
       if (error) throw error;
       return json(data);
     }),
+  );
+
+  // ---------- Flashcards ----------
+  server.registerTool(
+    "flashcards_paquets",
+    {
+      title: "Paquets de flashcards",
+      description: "Liste les paquets de flashcards (matière, nombre de cartes, cartes à revoir aujourd'hui, cartes proposées en attente de relecture).",
+      inputSchema: z.object({}),
+      annotations: { readOnlyHint: true },
+    },
+    tool("flashcards", async (_a, { sb }) => {
+      const { end } = dayBounds();
+      const [decks, cards, due] = await Promise.all([
+        sb.from("decks").select("id, title, subject, notebook_id").order("title"),
+        sb.from("cards").select("deck_id, status"),
+        sb.from("card_schedules").select("card_id, state, due_at").neq("state", "nouvelle").lt("due_at", end),
+      ]);
+      if (decks.error) throw decks.error;
+      const all = cards.data ?? [];
+      return json({
+        paquets: (decks.data ?? []).map((d) => ({
+          ...d,
+          cartes: all.filter((c) => c.deck_id === d.id && c.status === "active").length,
+          a_relire: all.filter((c) => c.deck_id === d.id && c.status === "a-verifier").length,
+        })),
+        a_revoir_aujourdhui: (due.data ?? []).length,
+      });
+    }),
+  );
+
+  server.registerTool(
+    "flashcards_proposer",
+    {
+      title: "Proposer des flashcards",
+      description: `Propose des flashcards dans un paquet (existant, ou créé avec « nouveau_paquet »), par exemple à partir d'une note lue avec note_lire. Les cartes arrivent « à relire » : la personne les garde, les corrige ou les retire dans Anima avant qu'elles entrent en révision. Règles : ${AI_CARD_RULES.join(" ")} Types : « basique » (question/réponse), « inversee » (terme ↔ définition, révisée dans les deux sens), « trous » (phrase avec {{c1::…}}, verso facultatif).`,
+      inputSchema: z.object({
+        paquet_id: uuid.optional(),
+        nouveau_paquet: z.string().min(1).max(120).optional().describe("Nom d'un nouveau paquet, si paquet_id est absent."),
+        matiere: z.string().max(80).optional(),
+        note_id: uuid.optional().describe("Note d'origine, pour que la personne puisse y revenir."),
+        cartes: z
+          .array(z.object({ type: z.enum(["basique", "inversee", "trous"]).default("basique"), recto: z.string().min(1).max(2000), verso: z.string().max(4000).default("") }))
+          .min(1)
+          .max(50),
+      }),
+    },
+    tool(
+      "flashcards",
+      async (
+        a: { paquet_id?: string; nouveau_paquet?: string; matiere?: string; note_id?: string; cartes: { type: "basique" | "inversee" | "trous"; recto: string; verso: string }[] },
+        { sb },
+      ) => {
+        const parsed = a.cartes.map((c) => cardSchema.safeParse({ kind: c.type, front: c.recto, back: c.verso }));
+        const bad = parsed.findIndex((p) => !p.success);
+        if (bad >= 0) return fail(`Carte ${bad + 1} : ${parsed[bad]!.error!.issues[0]?.message}`);
+        let deckId = a.paquet_id ?? null;
+        if (!deckId) {
+          if (!a.nouveau_paquet) return fail("Indique paquet_id ou nouveau_paquet.");
+          const { data, error } = await sb.from("decks").insert({ title: a.nouveau_paquet, subject: a.matiere ?? null }).select("id").single();
+          if (error) throw error;
+          deckId = data.id;
+        }
+        const rows = parsed.map((p) => ({ ...p.data!, deck_id: deckId!, note_id: a.note_id ?? null, source: "ia" as const, status: "a-verifier" as const }));
+        const { error } = await sb.from("cards").insert(rows);
+        if (error) return fail("Les cartes n'ont pas pu être ajoutées (paquet ou note introuvable ?).");
+        return ok(`${rows.length} carte(s) proposée(s). La personne les relit dans Anima, Flashcards, avant qu'elles entrent en révision.`);
+      },
+    ),
   );
 }

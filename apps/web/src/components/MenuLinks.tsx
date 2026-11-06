@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBibliotheque, IconCercles, IconCle, IconCoche, IconDossier, IconJournaux, IconNotes, IconReglages, IconSoleil } from "./icons";
+import { IconBibliotheque, IconCartes, IconCercles, IconCle, IconCoche, IconDossier, IconJournaux, IconNotes, IconReglages, IconSoleil } from "./icons";
 
 const LINKS = [
   { href: "/aujourdhui", label: "Aujourd'hui", Icon: IconSoleil, match: (p: string) => p.startsWith("/aujourdhui") },
   { href: "/journaux", label: "Journaux", Icon: IconJournaux, match: (p: string) => p.startsWith("/journaux") },
   { href: "/organiser", label: "Organiser", Icon: IconCoche, match: (p: string) => p.startsWith("/organiser") },
   { href: "/notes", label: "Notes", Icon: IconNotes, match: (p: string) => p.startsWith("/notes") },
+  { href: "/flashcards", label: "Flashcards", Icon: IconCartes, match: (p: string) => p.startsWith("/flashcards") },
   { href: "/cercles", label: "Cercles", Icon: IconCercles, match: (p: string) => p.startsWith("/cercles") },
   { href: "/bibliotheque", label: "Bibliothèque", Icon: IconBibliotheque, match: (p: string) => p.startsWith("/bibliotheque") },
   { href: "/fichiers", label: "Fichiers", Icon: IconDossier, match: (p: string) => p.startsWith("/fichiers") },
@@ -34,7 +35,7 @@ export function MenuLinks() {
   );
 }
 
-const TABS = [LINKS[0], LINKS[1], LINKS[3], LINKS[2], LINKS[4]] as const;
+const TABS = [LINKS[0], LINKS[1], LINKS[3], LINKS[2], LINKS[5]] as const;
 
 /** Barre d'onglets flottante (téléphone et iPad en portrait). */
 export function TabBar() {
