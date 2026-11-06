@@ -1,40 +1,30 @@
-/** Design system Anima, mêmes valeurs que apps/web/src/app/globals.css. */
-import { useColorScheme } from 'react-native';
+/** Design system Anima, édition nuit : mêmes valeurs que apps/web/src/app/globals.css. */
 
-const light = {
-  fond: '#F5F3EE',
-  surface: '#FBFAF7',
-  surface2: '#EFEBE3',
-  texte: '#151515',
-  doux: '#65615B',
-  trait: 'rgba(21,21,21,0.1)',
-  accent: '#151515',
-  accentTexte: '#F5F3EE',
-  terre: '#B4654A',
+/* L'appli est toujours en nuit graphite, comme le site : un seul look, neutre,
+   avec le champagne comme seule couleur d'accent. */
+const nuit = {
+  fond: '#0C0C0D',
+  surface: 'rgba(30,30,32,0.92)',
+  surface2: '#1F1F21',
+  texte: '#F2EFEA',
+  doux: '#A19D97',
+  trait: 'rgba(255,255,255,0.08)',
+  accent: '#E6C891',
+  accentTexte: '#16130F',
+  terre: '#E0B878',
+  champagne: '#E6C891',
 };
 
-const dark: typeof light = {
-  fond: '#121211',
-  surface: '#1C1B1A',
-  surface2: '#292826',
-  texte: '#F5F3EE',
-  doux: '#A39D93',
-  trait: 'rgba(245,243,238,0.12)',
-  accent: '#F5F3EE',
-  accentTexte: '#151515',
-  terre: '#C97B60',
-};
-
-export type Colors = typeof light;
+export type Colors = typeof nuit;
 
 export function useColors(): Colors {
-  return useColorScheme() === 'dark' ? dark : light;
+  return nuit;
 }
 
 export const fonts = {
-  titre: 'CormorantGaramond_500Medium',
-  titreItalique: 'CormorantGaramond_500Medium_Italic',
-  texte: 'Inter_400Regular',
-  texteMoyen: 'Inter_500Medium',
-  texteGras: 'Inter_600SemiBold',
+  titre: 'Fraunces_300Light',
+  titreItalique: 'Fraunces_300Light_Italic',
+  texte: 'Geist_400Regular',
+  texteMoyen: 'Geist_500Medium',
+  texteGras: 'Geist_600SemiBold',
 };
