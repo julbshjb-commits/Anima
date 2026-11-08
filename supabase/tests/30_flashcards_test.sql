@@ -77,6 +77,51 @@ reset role;
 select pg_temp.as_user('f1a5f1a5-0000-0000-0000-000000000001');
 select pg_temp.check((select count(*) from cards) = 3 and (select max(interval_days) from card_schedules) = 12, 'les fiches de Chloé sont intactes');
 
+-- Partage : Chloé donne un code, Yanis ajoute sa copie et garde ses propres progrès
+select pg_temp.check(public.deck_share('dec0dec0-0000-0000-0000-000000000001', true) ~ '^[A-Z2-9]{8}$', 'partage : un code de 8 caractères');
+create temp table code_partage as select share_code as c from decks where id = 'dec0dec0-0000-0000-0000-000000000001';
+grant select on code_partage to authenticated;
+reset role;
+select pg_temp.as_user('f1a5f1a5-0000-0000-0000-000000000002');
+do $$ begin
+  perform public.deck_share('dec0dec0-0000-0000-0000-000000000001', false);
+  raise exception 'ÉCHEC : partage du paquet d''autrui';
+exception when insufficient_privilege then raise notice 'ok  seul l''auteur partage son paquet';
+end $$;
+do $$ begin
+  update decks set source_deck_id = 'dec0dec0-0000-0000-0000-000000000001' where owner_id = auth.uid();
+  insert into decks (title, source_deck_id) values ('Pirate', 'dec0dec0-0000-0000-0000-000000000001');
+  raise exception 'ÉCHEC : se rattacher à la main au paquet d''autrui';
+exception when insufficient_privilege then raise notice 'ok  le lien vers un paquet partagé ne s''écrit pas à la main';
+end $$;
+select pg_temp.check(public.deck_preview('NOPE2345') is null, 'partage : un mauvais code ne montre rien');
+select pg_temp.check((public.deck_preview((select c from code_partage)) ->> 'cards')::int = 3
+  and (public.deck_preview((select c from code_partage)) ->> 'author') = 'Chloé', 'partage : aperçu avec l''auteur et le nombre de cartes');
+select pg_temp.check(public.deck_import(lower((select c from code_partage))) is not null, 'partage : Yanis ajoute sa copie');
+select pg_temp.check((select count(*) from cards c join decks d on d.id = c.deck_id where d.source_deck_id = 'dec0dec0-0000-0000-0000-000000000001') = 3
+  and (select count(*) from card_schedules s join cards c on c.id = s.card_id join decks d on d.id = c.deck_id
+       where d.source_deck_id = 'dec0dec0-0000-0000-0000-000000000001' and s.state = 'nouvelle') = 3, 'partage : la copie repart de zéro');
+select pg_temp.check((public.deck_preview((select c from code_partage)) ->> 'copied')::boolean, 'partage : l''aperçu sait que Yanis a déjà sa copie');
+select pg_temp.check(public.deck_import((select c from code_partage)) = (select id from decks where source_deck_id = 'dec0dec0-0000-0000-0000-000000000001'), 'partage : rejouer le code ne fait pas de doublon');
+select pg_temp.check((select count(*) from cards) = 3 + 0 and (select count(*) from decks) = 2, 'partage : Yanis ne voit que ses paquets');
+reset role;
+select pg_temp.as_user('f1a5f1a5-0000-0000-0000-000000000001');
+insert into cards (deck_id, front, back) values ('dec0dec0-0000-0000-0000-000000000001', 'Fuite à Varennes ?', '1791');
+select pg_temp.check((select count(*) from cards) = 4, 'partage : Chloé ne voit pas la copie de Yanis');
+reset role;
+select pg_temp.as_user('f1a5f1a5-0000-0000-0000-000000000002');
+select pg_temp.check(public.deck_updates((select id from decks where source_deck_id = 'dec0dec0-0000-0000-0000-000000000001')) = 1, 'partage : une nouvelle carte de l''auteur à récupérer');
+select pg_temp.check(public.deck_pull((select id from decks where source_deck_id = 'dec0dec0-0000-0000-0000-000000000001')) = 1, 'partage : mise à jour de la copie');
+reset role;
+select pg_temp.as_user('f1a5f1a5-0000-0000-0000-000000000001');
+select public.deck_share('dec0dec0-0000-0000-0000-000000000001', false);
+reset role;
+select pg_temp.as_user('f1a5f1a5-0000-0000-0000-000000000002');
+select pg_temp.check(public.deck_preview((select c from code_partage)) is null, 'partage : un code retiré ne marche plus');
+reset role;
+select pg_temp.as_user('f1a5f1a5-0000-0000-0000-000000000001');
+delete from cards where front = 'Fuite à Varennes ?';
+
 -- Connecteur IA : fermé tant que « flashcards » n'est pas coché
 insert into ai_access (spaces) values ('{notes}');
 select set_config('request.jwt.claims', '{"client_id":"claude-test"}', false);
@@ -92,6 +137,6 @@ select set_config('request.jwt.claims', '', false);
 -- Supprimer le compte efface tout
 reset role;
 delete from auth.users where id = 'f1a5f1a5-0000-0000-0000-000000000001';
-select pg_temp.check((select count(*) from decks where title = 'Révolution française') = 0 and (select count(*) from card_reviews) = 0, 'suppression du compte : tout est effacé');
+select pg_temp.check((select count(*) from decks where owner_id = 'f1a5f1a5-0000-0000-0000-000000000001') = 0 and (select count(*) from card_reviews) = 0, 'suppression du compte : tout est effacé');
 reset role;
 \echo 'Tests des Flashcards : ok.'

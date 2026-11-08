@@ -7,6 +7,8 @@ import {
   deckSchema,
   draftCardSchema,
   extractDraftCards,
+  isValidDeckCode,
+  normalizeInviteCode,
   reviewWrite,
   settingsSchema,
   type DraftCard,
@@ -54,6 +56,36 @@ export async function deleteDeck(form: FormData) {
   if (id) await supabase.from("decks").delete().eq("id", id);
   revalidatePath("/flashcards");
   redirect("/flashcards");
+}
+
+/* Partage avec la promo -------------------------------------------------- */
+
+/** Donne (ou retire) le code du paquet. Les progrès ne sont jamais partagés. */
+export async function shareDeck(form: FormData) {
+  const { supabase } = await requireUser();
+  const id = uuid(form.get("id"));
+  if (id) await supabase.rpc("deck_share", { p_deck_id: id, p_on: form.get("on") === "1" });
+  refresh(id);
+}
+
+/** Ajoute sa copie d'un paquet partagé (ou complète celle qu'on a déjà). */
+export async function importDeck(form: FormData) {
+  const raw = String(form.get("code") ?? "");
+  if (!isValidDeckCode(raw)) redirect("/flashcards/ajouter?erreur=code");
+  const code = normalizeInviteCode(raw);
+  const { supabase } = await requireUser();
+  const { data } = await supabase.rpc("deck_import", { p_code: code });
+  if (!data) redirect(`/flashcards/ajouter?code=${code}`);
+  revalidatePath("/flashcards");
+  redirect(`/flashcards/paquet?id=${data}&ajoute=1`);
+}
+
+/** Récupère les cartes que l'auteur a ajoutées depuis. */
+export async function pullDeck(form: FormData) {
+  const { supabase } = await requireUser();
+  const id = uuid(form.get("id"));
+  if (id) await supabase.rpc("deck_pull", { p_deck_id: id });
+  refresh(id);
 }
 
 /* Cartes ----------------------------------------------------------------- */

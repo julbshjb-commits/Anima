@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { coverOf } from "@anima/core";
+import { coverOf, daysUntil, examLabel, nextExam } from "@anima/core";
 import { getOverview, type Overview } from "@/lib/flashcards";
 import { requireUser } from "@/lib/auth";
 import { btn, btnGhost, card as surface } from "@/components/ui";
@@ -43,33 +43,54 @@ async function Flashcards() {
     groups.set(key, [...(groups.get(key) ?? []), d]);
   }
   const goalPct = Math.min(100, Math.round((o.today.done / o.settings.daily_goal) * 100));
+  const exam = nextExam(o.decks, o.today.day);
 
   return (
     <>
-      <header className="entree flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
+      {/* Sur téléphone, la carte du jour passe avant les boutons (display: contents). */}
+      <header className="max-sm:contents flex flex-wrap items-end justify-between gap-4">
+        <div className="entree max-sm:order-first flex flex-col gap-1.5">
           <p className="surtitre">{me.date}</p>
           <h1 className="titre text-[44px] lg:text-[56px] leading-[1.02]">
             {me.hello} <em className="italic champagne pr-2">{me.name}</em>
           </h1>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div style={{ ["--i" as string]: 1 }} className="entree flex flex-wrap gap-2">
+          <Link href="/flashcards/ajouter" className={btnGhost}>
+            <span className="sm:hidden">Avec un code</span>
+            <span className="max-sm:hidden">Ajouter avec un code</span>
+          </Link>
           <Link href="/flashcards/generer" className={btnGhost}>
-            Créer depuis une note
+            <span className="sm:hidden">Depuis une note</span>
+            <span className="max-sm:hidden">Créer depuis une note</span>
           </Link>
           <NewDeck subjects={subjects} open={o.decks.length === 0} />
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
-        <section style={{ ["--i" as string]: 1 }} className="entree relative isolate overflow-hidden rounded-2xl bg-[#111112] border border-champagne/25 shadow-[0_40px_90px_-50px_rgba(230,200,145,.45)] text-blanc p-8 lg:p-10 flex flex-col gap-6 min-h-[260px] justify-between">
+      <div className="max-sm:contents grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
+        <section style={{ ["--i" as string]: 1 }} className="entree max-sm:-order-1 relative isolate overflow-hidden rounded-2xl bg-[#111112] border border-champagne/25 shadow-[0_40px_90px_-50px_rgba(230,200,145,.45)] text-blanc p-8 lg:p-10 flex flex-col gap-6 min-h-[260px] justify-between">
           <div className="halo" aria-hidden>
             <i />
             <i />
             <i />
           </div>
           <div className="voile" aria-hidden />
-          <p className="relative surtitre !text-blanc/80">Aujourd'hui</p>
+          <div className="relative flex flex-wrap items-center justify-between gap-3">
+            <p className="surtitre !text-blanc/80">Aujourd'hui</p>
+            {exam && (
+              <Link
+                href={`/flashcards/paquet?id=${exam.id}`}
+                className="inline-flex items-center gap-2 h-8 px-3.5 max-w-full rounded-full border border-champagne/40 bg-champagne/10 text-[13px] text-champagne hover:bg-champagne/15"
+              >
+                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">{exam.days === 0 ? "Jour J" : `J-${exam.days}`}</span>
+                <span className="truncate text-blanc/75">
+                  {exam.title}
+                  <span className="max-sm:hidden"> · examen {examLabel(exam.days)}</span>
+                </span>
+              </Link>
+            )}
+          </div>
           {o.today.dueLeft > 0 ? (
             <>
               <h2 className="relative titre text-[40px] lg:text-[52px] leading-[1.02]">
@@ -135,7 +156,7 @@ async function Flashcards() {
               <h2 className="surtitre">{subject || "Sans matière"}</h2>
               <ul className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
                 {decks.map((d) => (
-                  <DeckTile key={d.id} d={d} />
+                  <DeckTile key={d.id} d={d} today={o.today.day} />
                 ))}
               </ul>
             </div>
@@ -156,8 +177,9 @@ async function Flashcards() {
   );
 }
 
-function DeckTile({ d }: { d: Overview["decks"][number] }) {
+function DeckTile({ d, today }: { d: Overview["decks"][number]; today: string }) {
   const c = coverOf(d.cover);
+  const exam = d.exam_date ? daysUntil(d.exam_date, today) : null;
   const s = d.stats;
   const pct = s.total ? Math.round((s.mature / s.total) * 100) : 0;
   return (
@@ -172,7 +194,13 @@ function DeckTile({ d }: { d: Overview["decks"][number] }) {
           <span className="text-xs text-doux">
             {plural(s.total, "carte")}
             {s.toCheck ? ` · ${s.toCheck} à relire` : ""}
+            {d.share_code ? " · partagé" : d.source_deck_id ? " · de ta promo" : ""}
           </span>
+          {exam != null && exam >= 0 && (
+            <span className="self-start mt-1 h-6 px-2.5 grid place-items-center rounded-full border border-champagne/40 bg-champagne/10 text-[11px] text-champagne font-medium tabular-nums">
+              Examen {examLabel(exam)}
+            </span>
+          )}
         </span>
       </Link>
       <div className="flex items-center gap-3 text-[13px]">

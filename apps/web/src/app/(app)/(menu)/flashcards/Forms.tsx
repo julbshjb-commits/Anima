@@ -1,10 +1,10 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { CARD_KINDS, COVERS, clozeNumbers, type CardKind } from "@anima/core";
+import { CARD_KINDS, COVERS, clozeNumbers, formatDeckCode, type CardKind } from "@anima/core";
 import type { Deck } from "@/lib/database.types";
 import { IconPlus } from "@/components/icons";
 import { btn, btnGhost } from "@/components/ui";
-import { addCard, createDeck, deleteDeck, saveSettings, updateCard, updateDeck, type FlashState } from "./actions";
+import { addCard, createDeck, deleteDeck, saveSettings, shareDeck, updateCard, updateDeck, type FlashState } from "./actions";
 
 export const field =
   "h-11 px-3.5 rounded-xl bg-papier border border-trait text-sm text-texte placeholder:text-doux focus:outline-none focus:border-texte/40 focus:shadow-[0_0_0_4px_rgba(224,184,120,.15)] min-w-0";
@@ -40,6 +40,10 @@ function DeckFields({
           <option key={s} value={s} />
         ))}
       </datalist>
+      <label className="flex flex-col gap-1 text-xs text-doux">
+        Date de l'examen (facultatif, pour le compte à rebours)
+        <input type="date" name="exam_date" defaultValue={deck?.exam_date ?? ""} className={field} />
+      </label>
       {deck && <textarea name="description" maxLength={500} rows={2} defaultValue={deck.description ?? ""} placeholder="À quoi sert ce paquet ? (facultatif)" className={area} />}
       <input type="hidden" name="cover" value={cover} />
       <div className="flex gap-1.5" role="radiogroup" aria-label="Couleur">
@@ -306,5 +310,66 @@ export function DeleteDeck({ id, count }: { id: string; count: number }) {
         Supprimer le paquet et toutes ses cartes
       </button>
     </form>
+  );
+}
+
+/** Partage par code : chacun ajoute sa copie, les progrès restent privés. */
+export function ShareDeck({ id, code }: { id: string; code: string | null }) {
+  const [copied, setCopied] = useState<"code" | "lien" | null>(null);
+  async function copy(what: "code" | "lien") {
+    if (!code) return;
+    const text = what === "code" ? formatDeckCode(code) : `${location.origin}/flashcards/ajouter?code=${code}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(what);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      setCopied(null);
+    }
+  }
+  if (!code)
+    return (
+      <form action={shareDeck} className="flex flex-col gap-3">
+        <p className="text-sm text-doux leading-relaxed max-w-xl">
+          Donne un code à ta promo : chacun ajoute sa propre copie et révise à son rythme. Personne ne voit tes réponses ni tes progrès.
+        </p>
+        <input type="hidden" name="id" value={id} />
+        <input type="hidden" name="on" value="1" />
+        <button type="submit" className={`${btnGhost} self-start`}>
+          Créer un code de partage
+        </button>
+      </form>
+    );
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <span className="titre chiffre-or text-[40px] leading-none tracking-[0.12em]" aria-label={`Code : ${code.split("").join(" ")}`}>
+          {formatDeckCode(code)}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => copy("code")} className={btnGhost}>
+            {copied === "code" ? "Code copié" : "Copier le code"}
+          </button>
+          <button type="button" onClick={() => copy("lien")} className={btnGhost}>
+            {copied === "lien" ? "Lien copié" : "Copier le lien"}
+          </button>
+        </div>
+      </div>
+      <p className="text-xs text-doux leading-relaxed max-w-xl">
+        Tes camarades tapent ce code dans Flashcards, avec « Ajouter avec un code », ou ouvrent le lien. Les cartes que tu ajoutes ensuite leur sont proposées. Tes réponses et tes progrès restent privés.
+      </p>
+      <form
+        action={shareDeck}
+        onSubmit={(e) => {
+          if (!confirm("Le code ne marchera plus. Ceux qui ont déjà ajouté le paquet gardent leur copie.")) e.preventDefault();
+        }}
+      >
+        <input type="hidden" name="id" value={id} />
+        <input type="hidden" name="on" value="0" />
+        <button type="submit" className="text-sm text-terre hover:underline">
+          Arrêter le partage
+        </button>
+      </form>
+    </div>
   );
 }

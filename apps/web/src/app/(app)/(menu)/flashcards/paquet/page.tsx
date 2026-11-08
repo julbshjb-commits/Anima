@@ -3,11 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { coverOf } from "@anima/core";
+import { coverOf, dayBounds, daysUntil, examLabel } from "@anima/core";
 import { getDeck } from "@/lib/flashcards";
 import { IconRetour } from "@/components/icons";
 import { btn, btnGhost, card as surface } from "@/components/ui";
-import { AddCard, DeleteDeck, EditDeck } from "../Forms";
+import { AddCard, DeleteDeck, EditDeck, ShareDeck } from "../Forms";
+import { pullDeck } from "../actions";
 import { CardList, ToCheck } from "./CardList";
 
 export const metadata: Metadata = { title: "Paquet" };
@@ -24,11 +25,12 @@ export default function DeckPage(props: PageProps<"/flashcards/paquet">) {
 
 async function Deck({ searchParams }: PageProps<"/flashcards/paquet">) {
   await connection();
-  const { id } = await searchParams;
+  const { id, ajoute } = await searchParams;
   if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const data = await getDeck(id);
   if (!data) notFound();
-  const { deck, cards, notebooks, projects, notes } = data;
+  const { deck, cards, notebooks, projects, notes, updates } = data;
+  const exam = deck.exam_date ? daysUntil(deck.exam_date, dayBounds().day) : null;
   const now = new Date().getTime();
   const active = cards.filter((c) => c.status === "active");
   const toCheck = cards.filter((c) => c.status === "a-verifier");
@@ -59,8 +61,15 @@ async function Deck({ searchParams }: PageProps<"/flashcards/paquet">) {
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            {(notebook || project) && (
+            {(notebook || project || (exam != null && exam >= 0) || deck.share_code || deck.source_deck_id) && (
               <p className="flex flex-wrap gap-2 text-xs">
+                {exam != null && exam >= 0 && (
+                  <span className="h-7 px-3 grid place-items-center rounded-full border border-champagne/40 bg-champagne/10 text-champagne font-medium">
+                    Examen {examLabel(exam)}
+                  </span>
+                )}
+                {deck.share_code && <span className="h-7 px-3 grid place-items-center rounded-full border border-trait text-doux">Partagé avec un code</span>}
+                {deck.source_deck_id && <span className="h-7 px-3 grid place-items-center rounded-full border border-trait text-doux">Ajouté avec un code</span>}
                 {notebook && (
                   <Link href={`/notes?carnet=${notebook.id}`} className="h-7 px-3 grid place-items-center rounded-full border border-trait hover:bg-lin">
                     Carnet · {notebook.title}
@@ -84,8 +93,29 @@ async function Deck({ searchParams }: PageProps<"/flashcards/paquet">) {
           <Link href={`/flashcards/generer?paquet=${deck.id}`} className={btnGhost}>
             Depuis une note
           </Link>
+          <a href="#partage" className={btnGhost}>
+            {deck.share_code ? "Code de partage" : "Partager"}
+          </a>
         </div>
       </header>
+
+      {ajoute && updates === 0 && (
+        <p className="entree rounded-2xl border border-champagne/30 bg-champagne/5 px-5 py-4 text-sm">
+          Le paquet est dans tes paquets. Tes réponses et tes progrès ne sont visibles que par toi.
+        </p>
+      )}
+
+      {updates > 0 && (
+        <form action={pullDeck} className="entree rounded-2xl border border-champagne/30 bg-champagne/5 px-5 py-4 flex flex-wrap items-center gap-4 justify-between">
+          <p className="text-sm">
+            L'auteur a ajouté {updates} carte{updates > 1 ? "s" : ""} depuis ta copie.
+          </p>
+          <input type="hidden" name="id" value={deck.id} />
+          <button type="submit" className={`${btn} h-9 px-4 text-[13px]`}>
+            Les récupérer
+          </button>
+        </form>
+      )}
 
       {toCheck.length > 0 && <ToCheck cards={toCheck} notes={notes} now={now} />}
 
@@ -97,6 +127,11 @@ async function Deck({ searchParams }: PageProps<"/flashcards/paquet">) {
       <section className="flex flex-col gap-3">
         <h2 className="surtitre">Cartes du paquet</h2>
         <CardList cards={active} notes={notes} now={now} />
+      </section>
+
+      <section id="partage" className={`${surface} p-5 lg:p-6 flex flex-col gap-3 scroll-mt-20`}>
+        <h2 className="surtitre">Partager avec ta promo</h2>
+        <ShareDeck id={deck.id} code={deck.share_code} />
       </section>
 
       <details className={`${surface} p-5`}>

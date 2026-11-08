@@ -59,8 +59,34 @@ export const deckSchema = z.object({
   cover: z.enum(COVER_IDS).default("lumiere-miel"),
   notebook_id: uuidOrNull,
   project_id: uuidOrNull,
+  exam_date: z
+    .preprocess((v) => (v === "" || v == null ? null : v), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date d'examen invalide.").nullable())
+    .default(null),
 });
 export type DeckInput = z.infer<typeof deckSchema>;
+
+/** Jours avant l'examen (0 = aujourd'hui, négatif = passé). Dates au format AAAA-MM-JJ. */
+export function daysUntil(examDate: string, today: string): number {
+  return Math.round((Date.parse(`${examDate}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86_400_000);
+}
+
+/** « aujourd'hui », « demain », « dans 12 jours ». */
+export function examLabel(days: number): string {
+  if (days === 0) return "aujourd'hui";
+  if (days === 1) return "demain";
+  return `dans ${days} jours`;
+}
+
+/** L'examen le plus proche à venir parmi les paquets. */
+export function nextExam<T extends { exam_date: string | null }>(decks: T[], today: string): (T & { days: number }) | null {
+  let best: (T & { days: number }) | null = null;
+  for (const d of decks) {
+    if (!d.exam_date) continue;
+    const days = daysUntil(d.exam_date, today);
+    if (days >= 0 && (!best || days < best.days)) best = { ...d, days };
+  }
+  return best;
+}
 
 /** Mots-clés : « dates, révolution » → ["dates", "révolution"]. */
 export function parseCardTags(raw: unknown): string[] {

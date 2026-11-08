@@ -464,14 +464,14 @@ export function registerAnimaTools(server: McpServer) {
     "flashcards_paquets",
     {
       title: "Paquets de flashcards",
-      description: "Liste les paquets de flashcards (matière, nombre de cartes, cartes à revoir aujourd'hui, cartes proposées en attente de relecture).",
+      description: "Liste les paquets de flashcards (matière, date d'examen, nombre de cartes, cartes à revoir aujourd'hui, cartes proposées en attente de relecture).",
       inputSchema: z.object({}),
       annotations: { readOnlyHint: true },
     },
     tool("flashcards", async (_a, { sb }) => {
       const { end } = dayBounds();
       const [decks, cards, due] = await Promise.all([
-        sb.from("decks").select("id, title, subject, notebook_id").order("title"),
+        sb.from("decks").select("id, title, subject, notebook_id, exam_date").order("title"),
         sb.from("cards").select("deck_id, status"),
         sb.from("card_schedules").select("card_id, state, due_at").neq("state", "nouvelle").lt("due_at", end),
       ]);

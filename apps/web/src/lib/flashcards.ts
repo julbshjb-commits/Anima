@@ -150,16 +150,19 @@ export type DeckDetail = {
   notebooks: { id: string; title: string }[];
   projects: { id: string; title: string }[];
   notes: Record<string, string>;
+  /** Nouvelles cartes de l'auteur à récupérer (copie d'un paquet partagé). */
+  updates: number;
 };
 
 export async function getDeck(id: string): Promise<DeckDetail | null> {
   const { supabase } = await requireUser();
   const { data: deck } = await supabase.from("decks").select("*").eq("id", id).maybeSingle();
   if (!deck) return null;
-  const [cards, notebooks, projects] = await Promise.all([
+  const [cards, notebooks, projects, updates] = await Promise.all([
     supabase.from("cards").select("*").eq("deck_id", id).order("created_at", { ascending: false }).limit(5000),
     supabase.from("notebooks").select("id, title").is("archived_at", null).order("title"),
     supabase.from("projects").select("id, title").is("archived_at", null).order("title"),
+    deck.source_deck_id ? supabase.rpc("deck_updates", { p_deck_id: id }) : Promise.resolve({ data: 0 }),
   ]);
   const list = cards.data ?? [];
   const ids = list.map((c) => c.id);
@@ -174,6 +177,7 @@ export async function getDeck(id: string): Promise<DeckDetail | null> {
     notebooks: notebooks.data ?? [],
     projects: projects.data ?? [],
     notes: Object.fromEntries(notes.map((n) => [n.id, n.title])),
+    updates: updates.data ?? 0,
   };
 }
 

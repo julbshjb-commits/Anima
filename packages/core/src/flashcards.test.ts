@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  NEW_SCHEDULE, buildQueue, cardFace, cardSchema, clozeNumbers, dayBounds, extractDraftCards, formatDelay,
-  nextSchedule, previewDelays, renderCloze, retentionRate, streakDays, variantsFor, type Schedule,
+  NEW_SCHEDULE, buildQueue, cardFace, cardSchema, clozeNumbers, dayBounds, daysUntil, deckSchema, examLabel, extractDraftCards, formatDeckCode,
+  formatDelay, isValidDeckCode, nextExam, nextSchedule, previewDelays, renderCloze, retentionRate, streakDays, variantsFor, type Schedule,
 } from "./index";
 
 const now = new Date("2026-11-06T10:00:00Z");
@@ -130,5 +130,35 @@ describe("journée et progrès", () => {
     ];
     const q = buildQueue(items, { now, endOfDay: end, newLeft: 1, reviewsLeft: 100 });
     expect(q.map((i) => i.id)).toEqual(["l1", "r1", "n1"]);
+  });
+});
+
+describe("paquets partagés et examens", () => {
+  it("lit et affiche un code de paquet", () => {
+    expect(isValidDeckCode("k7mq-2pxa")).toBe(true);
+    expect(isValidDeckCode("K7M-Q2P")).toBe(false);
+    expect(isValidDeckCode("K7MQ2PX0")).toBe(false);
+    expect(formatDeckCode("k7mq2pxa")).toBe("K7MQ-2PXA");
+  });
+
+  it("compte les jours avant l'examen et trouve le plus proche", () => {
+    expect(daysUntil("2027-01-18", "2027-01-06")).toBe(12);
+    expect(daysUntil("2027-03-28", "2027-03-27")).toBe(1);
+    expect(examLabel(0)).toBe("aujourd'hui");
+    expect(examLabel(12)).toBe("dans 12 jours");
+    const decks = [
+      { id: "a", exam_date: "2027-01-02" },
+      { id: "b", exam_date: "2027-01-20" },
+      { id: "c", exam_date: null },
+      { id: "d", exam_date: "2027-01-12" },
+    ];
+    expect(nextExam(decks, "2027-01-06")).toMatchObject({ id: "d", days: 6 });
+    expect(nextExam([{ exam_date: "2026-12-01" }], "2027-01-06")).toBeNull();
+  });
+
+  it("accepte une date d'examen vide ou au bon format", () => {
+    expect(deckSchema.parse({ title: "Cœur", exam_date: "" }).exam_date).toBeNull();
+    expect(deckSchema.parse({ title: "Cœur", exam_date: "2027-01-18" }).exam_date).toBe("2027-01-18");
+    expect(deckSchema.safeParse({ title: "Cœur", exam_date: "18/01/2027" }).success).toBe(false);
   });
 });

@@ -254,8 +254,27 @@ export type Deck = {
   cover: string;
   notebook_id: string | null;
   project_id: string | null;
+  /** Code à 8 caractères quand le paquet est partagé avec la promo. */
+  share_code: string | null;
+  /** Paquet d'origine quand c'est une copie ajoutée avec un code. */
+  source_deck_id: string | null;
+  /** Date de l'examen, pour le compte à rebours. */
+  exam_date: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
+};
+
+export type DeckPreview = {
+  title: string;
+  subject: string | null;
+  description: string | null;
+  cover: string;
+  author: string;
+  cards: number;
+  sample: { kind: CardKind; front: string; back: string }[];
+  mine: boolean;
+  /** La personne a déjà sa copie de ce paquet. */
+  copied: boolean;
 };
 
 export type Card = {
@@ -267,6 +286,7 @@ export type Card = {
   back: string;
   tags: string[];
   note_id: string | null;
+  origin_card_id: string | null;
   source: "manuel" | "ia" | "auto";
   status: "active" | "a-verifier";
   suspended: boolean;
@@ -386,7 +406,7 @@ export type Database = {
       files: Table<FileRow, { name: string; storage_path: string; folder_id?: string | null; starred?: boolean; note_id?: string | null; trashed_at?: string | null }>;
       reading_goals: Table<ReadingGoal, { year: number; target: number }>;
       notebook_invites: Table<{ id: string; notebook_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
-      decks: Table<Deck, { title: string; subject?: string | null; description?: string | null; cover?: string; notebook_id?: string | null; project_id?: string | null }>;
+      decks: Table<Deck, { title: string; subject?: string | null; description?: string | null; cover?: string; notebook_id?: string | null; project_id?: string | null; exam_date?: string | null }>;
       cards: Table<Card, { deck_id: string; front: string; kind?: CardKind; back?: string; tags?: string[]; note_id?: string | null; source?: Card["source"]; status?: Card["status"]; suspended?: boolean }>;
       /** Les lignes sont créées par la base quand une carte est ajoutée. */
       card_schedules: Table<CardSchedule, never, Partial<Omit<CardSchedule, "id" | "owner_id" | "card_id" | "variant">>>;
@@ -409,6 +429,11 @@ export type Database = {
       toggle_question: { Args: { p_block_id: string }; Returns: undefined };
       storage_used_bytes: { Args: Record<string, never>; Returns: number };
       file_quota_bytes: { Args: Record<string, never>; Returns: number };
+      deck_share: { Args: { p_deck_id: string; p_on: boolean }; Returns: string | null };
+      deck_preview: { Args: { p_code: string }; Returns: DeckPreview | null };
+      deck_import: { Args: { p_code: string }; Returns: string | null };
+      deck_updates: { Args: { p_deck_id: string }; Returns: number };
+      deck_pull: { Args: { p_deck_id: string }; Returns: number };
     };
     Enums: {
       journal_kind: JournalKind;

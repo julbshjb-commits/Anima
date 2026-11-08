@@ -242,3 +242,208 @@ begin
   end loop;
 end $$;
 
+
+-- ---------------------------------------------------------------------------
+-- Partage de paquets (promo, amis) et date d'examen.
+--
+-- Un paquet reste personnel. Son auteur peut lui donner un code de partage :
+-- avec ce code, un camarade voit un aperçu, puis ajoute SA copie du paquet.
+-- Chacun garde ses propres progrès ; la copie se met à jour d'un geste avec
+-- les cartes que l'auteur a ajoutées depuis (jamais l'inverse).
+
+alter table public.decks
+  add column share_code     text unique check (share_code ~ '^[A-Z2-9]{8}$'),
+  add column source_deck_id uuid references public.decks (id) on delete set null,
+  add column exam_date      date;
+alter table public.cards
+  add column origin_card_id uuid references public.cards (id) on delete set null;
+create index cards_origin_idx on public.cards (deck_id, origin_card_id);
+
+-- Le code de partage et le lien vers la source ne s'écrivent que par les
+-- fonctions ci-dessous : personne ne peut se rattacher au paquet d'autrui à la main.
+create function public.decks_guard_sharing()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if current_user in ('authenticated', 'anon') then
+    if tg_op = 'INSERT' and (new.share_code is not null or new.source_deck_id is not null) then
+      raise exception 'immutable_columns' using errcode = '42501';
+    end if;
+    if tg_op = 'UPDATE' and (new.share_code is distinct from old.share_code
+                             or new.source_deck_id is distinct from old.source_deck_id) then
+      raise exception 'immutable_columns' using errcode = '42501';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger decks_guard_sharing before insert or update of share_code, source_deck_id on public.decks
+  for each row execute function public.decks_guard_sharing();
+
+create function public.cards_guard_origin()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if current_user in ('authenticated', 'anon') and new.origin_card_id is distinct from
+     (case when tg_op = 'UPDATE' then old.origin_card_id end) then
+    raise exception 'immutable_columns' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger cards_guard_origin before insert or update of origin_card_id on public.cards
+  for each row execute function public.cards_guard_origin();
+
+-- Donne (ou retire) un code de partage. Réservé à l'auteur du paquet.
+create function public.deck_share(p_deck_id uuid, p_on boolean)
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_code text;
+begin
+  if not exists (select 1 from public.decks d where d.id = p_deck_id and d.owner_id = auth.uid()) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if not p_on then
+    update public.decks set share_code = null where id = p_deck_id;
+    return null;
+  end if;
+  select share_code into v_code from public.decks where id = p_deck_id;
+  while v_code is null loop
+    begin
+      update public.decks
+        set share_code = public.generate_invite_code() || substr(public.generate_invite_code(), 1, 2)
+        where id = p_deck_id
+        returning share_code into v_code;
+    exception when unique_violation then
+      v_code := null;
+    end;
+  end loop;
+  return v_code;
+end;
+$$;
+
+-- Aperçu d'un paquet partagé (titre, matière, auteur, nombre de cartes, 3 exemples).
+create function public.deck_preview(p_code text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object(
+    'title', d.title,
+    'subject', d.subject,
+    'description', d.description,
+    'cover', d.cover,
+    'author', coalesce(p.display_name, 'Quelqu''un'),
+    'cards', (select count(*) from public.cards c where c.deck_id = d.id and c.status = 'active'),
+    'sample', (
+      select coalesce(jsonb_agg(jsonb_build_object('kind', s.kind, 'front', s.front, 'back', s.back)), '[]'::jsonb)
+      from (select c.kind, c.front, c.back from public.cards c
+            where c.deck_id = d.id and c.status = 'active' order by c.created_at limit 3) s
+    ),
+    'mine', d.owner_id = auth.uid(),
+    'copied', exists (select 1 from public.decks m where m.owner_id = auth.uid() and m.source_deck_id = d.id)
+  )
+  from public.decks d
+  left join public.profiles p on p.id = d.owner_id
+  where d.share_code = upper(trim(p_code)) and auth.uid() is not null;
+$$;
+
+-- Ajoute sa copie d'un paquet partagé, ou met à jour une copie existante
+-- avec les nouvelles cartes de l'auteur. Renvoie l'id du paquet de la personne.
+create function public.deck_import(p_code text)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_me uuid := auth.uid();
+  v_src public.decks%rowtype;
+  v_mine uuid;
+begin
+  if v_me is null then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  select * into v_src from public.decks where share_code = upper(trim(p_code));
+  if v_src.id is null then
+    return null;
+  end if;
+  if v_src.owner_id = v_me then
+    return v_src.id;
+  end if;
+  select id into v_mine from public.decks where owner_id = v_me and source_deck_id = v_src.id limit 1;
+  if v_mine is null then
+    insert into public.decks (owner_id, title, subject, description, cover, source_deck_id, exam_date)
+      values (v_me, v_src.title, v_src.subject, v_src.description, v_src.cover, v_src.id, v_src.exam_date)
+      returning id into v_mine;
+  end if;
+  insert into public.cards (owner_id, deck_id, kind, front, back, tags, source, origin_card_id)
+    select v_me, v_mine, c.kind, c.front, c.back, c.tags, 'manuel', c.id
+    from public.cards c
+    where c.deck_id = v_src.id and c.status = 'active'
+      and not exists (select 1 from public.cards m where m.deck_id = v_mine and m.origin_card_id = c.id)
+    order by c.created_at;
+  return v_mine;
+end;
+$$;
+
+-- Nombre de nouvelles cartes de l'auteur pas encore dans la copie.
+create function public.deck_updates(p_deck_id uuid)
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select count(*)::integer
+  from public.decks mine
+  join public.decks src on src.id = mine.source_deck_id and src.share_code is not null
+  join public.cards c on c.deck_id = src.id and c.status = 'active'
+  where mine.id = p_deck_id and mine.owner_id = auth.uid()
+    and not exists (select 1 from public.cards m where m.deck_id = mine.id and m.origin_card_id = c.id);
+$$;
+
+-- Le code de la source sert à la mise à jour, sans jamais l'afficher.
+create function public.deck_pull(p_deck_id uuid)
+returns integer
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_code text;
+  v_before integer;
+  v_after integer;
+begin
+  select src.share_code into v_code
+  from public.decks mine join public.decks src on src.id = mine.source_deck_id
+  where mine.id = p_deck_id and mine.owner_id = auth.uid();
+  if v_code is null then
+    return 0;
+  end if;
+  select count(*) into v_before from public.cards where deck_id = p_deck_id;
+  perform public.deck_import(v_code);
+  select count(*) into v_after from public.cards where deck_id = p_deck_id;
+  return v_after - v_before;
+end;
+$$;
+
+revoke execute on function public.deck_share(uuid, boolean), public.deck_preview(text),
+  public.deck_import(text), public.deck_updates(uuid), public.deck_pull(uuid) from public, anon;
+grant execute on function public.deck_share(uuid, boolean), public.deck_preview(text),
+  public.deck_import(text), public.deck_updates(uuid), public.deck_pull(uuid) to authenticated;
