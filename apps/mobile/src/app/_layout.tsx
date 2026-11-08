@@ -51,11 +51,14 @@ function Navigation() {
           contentStyle: { backgroundColor: c.fond },
         }}>
         <Stack.Protected guard={!!session}>
-          <Stack.Screen name="index" options={{ title: 'Journaux' }} />
+          <Stack.Screen name="index" options={{ title: 'Flashcards' }} />
+          <Stack.Screen name="journaux" options={{ title: 'Journaux' }} />
           <Stack.Screen name="nouveau" options={{ title: 'Nouveau journal', presentation: 'modal' }} />
           <Stack.Screen name="rejoindre" options={{ title: 'Rejoindre', presentation: 'modal' }} />
           <Stack.Screen name="compte" options={{ title: 'Compte' }} />
-          <Stack.Screen name="flashcards/index" options={{ title: 'Flashcards' }} />
+          <Stack.Screen name="flashcards/paquet" options={{ title: '' }} />
+          <Stack.Screen name="flashcards/nouveau" options={{ title: 'Nouveau paquet', presentation: 'modal' }} />
+          <Stack.Screen name="flashcards/code" options={{ title: 'Paquet partagé', presentation: 'modal' }} />
           <Stack.Screen name="flashcards/reviser" options={{ title: 'Révision', presentation: 'fullScreenModal' }} />
           <Stack.Screen name="journal/[id]/index" options={{ title: '' }} />
           <Stack.Screen name="journal/[id]/ecrire" options={{ title: 'Écrire', presentation: 'modal' }} />

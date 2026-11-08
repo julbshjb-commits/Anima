@@ -8,7 +8,13 @@ import { Body, Button, ErrorText, Loading, Overline, Title } from '@/components/
 import { loadFlashcards, recordReview, type StudyItem } from '@/lib/flashcards';
 import { fonts, useColors } from '@/theme';
 
-const TONES: Record<Rating, string> = { 1: '#F0A094', 2: '#DCD8D2', 3: '#A9CDB3', 4: '#E6C891' };
+/** Mêmes teintes que le web : « Bien », la réponse la plus fréquente, est en or. */
+const TONES: Record<Rating, { border: string; bg: string; text: string; sub: string }> = {
+  1: { border: 'rgba(226,119,79,0.45)', bg: 'rgba(226,119,79,0.08)', text: '#F2EFEA', sub: '#D4A896' },
+  2: { border: 'rgba(255,255,255,0.16)', bg: 'rgba(255,255,255,0.03)', text: '#F2EFEA', sub: '#A19D97' },
+  3: { border: '#E6C891', bg: '#E6C891', text: '#16130F', sub: '#5A4A2C' },
+  4: { border: 'rgba(120,170,220,0.45)', bg: 'rgba(120,170,220,0.08)', text: '#F2EFEA', sub: '#A8BFD4' },
+};
 
 /** Séance de révision tactile : toucher pour retourner, glisser à droite « Bien », à gauche « À revoir ». */
 export default function Reviser() {
@@ -94,7 +100,7 @@ export default function Reviser() {
   const rotateFront = flip.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   const rotateBack = flip.interpolate({ inputRange: [0, 1], outputRange: ['180deg', '360deg'] });
   const tilt = pan.interpolate({ inputRange: [-300, 0, 300], outputRange: ['-10deg', '0deg', '10deg'] });
-  const face = { position: 'absolute' as const, inset: 0, backfaceVisibility: 'hidden' as const, borderRadius: 28, borderWidth: 1, borderColor: c.trait, backgroundColor: '#141415', padding: 28, justifyContent: 'center' as const, gap: 16 };
+  const face = { position: 'absolute' as const, inset: 0, backfaceVisibility: 'hidden' as const, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(230,200,145,0.25)', backgroundColor: '#141415', padding: 28, justifyContent: 'center' as const, gap: 16 };
 
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.fond, padding: 20, gap: 20 }}>
@@ -109,7 +115,7 @@ export default function Reviser() {
             <Overline>Question</Overline>
             <CardText item={item} side="question" />
           </Animated.View>
-          <Animated.View style={[face, { transform: [{ perspective: 1200 }, { rotateY: rotateBack }] }]}>
+          <Animated.View style={[face, { borderColor: 'rgba(230,200,145,0.45)', backgroundColor: '#1A1814' }, { transform: [{ perspective: 1200 }, { rotateY: rotateBack }] }]}>
             <Overline>Réponse</Overline>
             <CardText item={item} side="reponse" />
           </Animated.View>
@@ -122,9 +128,20 @@ export default function Reviser() {
               key={r.value}
               accessibilityRole="button"
               onPress={() => rate(r.value)}
-              style={({ pressed }) => ({ flex: 1, minHeight: 64, borderRadius: 20, borderWidth: 1, borderColor: c.trait, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', gap: 2, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-              <Text style={{ fontFamily: fonts.texteMoyen, fontSize: 14, color: TONES[r.value] }}>{r.label}</Text>
-              <Text style={{ fontFamily: fonts.texte, fontSize: 11, color: c.doux }}>{delays?.[r.value]}</Text>
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: 68,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: TONES[r.value].border,
+                backgroundColor: TONES[r.value].bg,
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                transform: [{ scale: pressed ? 0.96 : 1 }],
+              })}>
+              <Text style={{ fontFamily: r.value === 3 ? fonts.texteGras : fonts.texteMoyen, fontSize: 14, color: TONES[r.value].text }}>{r.label}</Text>
+              <Text style={{ fontFamily: fonts.texte, fontSize: 11, color: TONES[r.value].sub }}>{delays?.[r.value]}</Text>
             </Pressable>
           ))}
         </View>

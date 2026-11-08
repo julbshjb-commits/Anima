@@ -6,13 +6,18 @@
 import {
   DEFAULT_SETTINGS,
   buildQueue,
+  cardSchema,
   dayBounds,
+  isValidDeckCode,
+  normalizeInviteCode,
   reviewWrite,
   reviewsByDay,
   streakDays,
   type Card,
+  type CardKind,
   type CardSchedule,
   type Deck,
+  type DeckPreview,
   type QueueItem,
   type Rating,
 } from '@anima/core';
@@ -69,6 +74,15 @@ export async function loadFlashcards(deckId: string | null = null) {
   return { queue, decks, doneToday: today.length, goal: all.settings.daily_goal, streak: streakDays(Object.keys(reviewsByDay(reviews)), day) };
 }
 
+/** Accueil : les cartes du jour et le prénom pour le bonjour. */
+export async function loadHome(userId: string) {
+  const [fc, me] = await Promise.all([
+    loadFlashcards(),
+    requireClient().from('profiles').select('display_name').eq('id', userId).maybeSingle(),
+  ]);
+  return { ...fc, name: (me.data?.display_name ?? '').split(' ')[0] ?? '' };
+}
+
 export async function recordReview(item: StudyItem, rating: Rating, durationMs: number) {
   const supabase = requireClient();
   const w = reviewWrite(item.schedule, item.card.deck_id, rating, { durationMs });
@@ -78,4 +92,81 @@ export async function recordReview(item: StudyItem, rating: Rating, durationMs: 
   ]);
   if (u.error || l.error) throw u.error ?? l.error;
   return w.next;
+}
+
+/* Paquets et cartes : créer, ajouter, partager (mêmes règles que le web) --- */
+
+export type DeckCard = Pick<Card, 'id' | 'kind' | 'front' | 'back' | 'created_at'>;
+
+/** Un paquet, ses dernières cartes, et les nouveautés de l'auteur si c'est une copie. */
+export async function loadDeck(id: string) {
+  const supabase = requireClient();
+  const [all, cards] = await Promise.all([
+    loadFlashcards(id),
+    supabase.from('cards').select('id, kind, front, back, status, created_at').eq('deck_id', id).order('created_at', { ascending: false }).limit(80),
+  ]);
+  const deck = all.decks.find((d) => d.id === id);
+  if (!deck) return null;
+  const updates = deck.source_deck_id ? ((await supabase.rpc('deck_updates', { p_deck_id: id })).data ?? 0) : 0;
+  const list = cards.data ?? [];
+  return {
+    deck,
+    due: all.queue.length,
+    cards: list.filter((c) => c.status === 'active') as DeckCard[],
+    toCheck: list.filter((c) => c.status === 'a-verifier').length,
+    updates,
+  };
+}
+
+export async function createDeck(title: string, subject: string): Promise<string> {
+  const t = title.trim();
+  if (!t) throw new Error('Donne un nom au paquet.');
+  const { data, error } = await requireClient()
+    .from('decks')
+    .insert({ title: t.slice(0, 120), subject: subject.trim().slice(0, 80) || null })
+    .select('id')
+    .single();
+  if (error || !data) throw new Error('Le paquet n’a pas pu être créé. Réessaie.');
+  return data.id;
+}
+
+/** Ajoute une carte : elle entre tout de suite en révision. */
+export async function addCard(deckId: string, card: { kind: CardKind; front: string; back: string }) {
+  const parsed = cardSchema.safeParse({ ...card, tags: '' });
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Carte invalide.');
+  const { error } = await requireClient().from('cards').insert({ ...parsed.data, deck_id: deckId });
+  if (error) throw new Error('La carte n’a pas pu être ajoutée.');
+}
+
+export async function deleteCard(id: string) {
+  const { error } = await requireClient().from('cards').delete().eq('id', id);
+  if (error) throw new Error('La carte n’a pas pu être supprimée.');
+}
+
+/** Donne (ou retire) le code de partage. Les progrès ne sont jamais partagés. */
+export async function shareDeck(id: string, on: boolean): Promise<string | null> {
+  const { data, error } = await requireClient().rpc('deck_share', { p_deck_id: id, p_on: on });
+  if (error) throw new Error('Le partage n’a pas pu être modifié.');
+  return data;
+}
+
+export async function previewDeck(raw: string): Promise<{ code: string; preview: DeckPreview }> {
+  if (!isValidDeckCode(raw)) throw new Error('Un code de paquet fait 8 caractères, par exemple K7MQ-2PXA.');
+  const code = normalizeInviteCode(raw);
+  const { data } = await requireClient().rpc('deck_preview', { p_code: code });
+  if (!data) throw new Error('Ce code ne correspond à aucun paquet partagé. Il a peut-être été retiré.');
+  return { code, preview: data };
+}
+
+/** Ajoute sa copie d'un paquet partagé (ou complète celle qu'on a déjà). */
+export async function importDeck(code: string): Promise<string> {
+  const { data, error } = await requireClient().rpc('deck_import', { p_code: code });
+  if (error || !data) throw new Error('Le paquet n’a pas pu être ajouté. Réessaie.');
+  return data;
+}
+
+export async function pullDeck(id: string): Promise<number> {
+  const { data, error } = await requireClient().rpc('deck_pull', { p_deck_id: id });
+  if (error) throw new Error('Les nouvelles cartes n’ont pas pu être récupérées.');
+  return data ?? 0;
 }
