@@ -16,7 +16,7 @@ const geist = Geist({ variable: "--font-ui", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: "Anima", template: "%s · Anima" },
-  description: "Ton journal intime et vos journaux partagés. Privé par défaut, hébergé en Europe.",
+  description: "Retiens tout ce que tu apprends : tes cours deviennent des flashcards, révisées au bon moment. Privé, hébergé en Europe.",
   appleWebApp: { capable: true, title: "Anima", statusBarStyle: "black-translucent" },
 };
 

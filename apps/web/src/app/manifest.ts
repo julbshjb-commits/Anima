@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Anima",
     short_name: "Anima",
-    description: "Ton journal intime et vos journaux partagés. Privé par défaut, hébergé en Europe.",
+    description: "Retiens tout ce que tu apprends : tes cours deviennent des flashcards, révisées au bon moment. Privé, hébergé en Europe.",
     lang: "fr",
     start_url: "/aujourdhui",
     display: "standalone",
