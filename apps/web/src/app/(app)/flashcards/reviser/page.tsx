@@ -19,5 +19,5 @@ async function Reviser({ searchParams }: PageProps<"/flashcards/reviser">) {
   const sp = await searchParams;
   const deckId = typeof sp.paquet === "string" && /^[0-9a-f-]{36}$/i.test(sp.paquet) ? sp.paquet : null;
   const q = await getStudyQueue(deckId);
-  return <Session initial={q.items} goal={q.dailyGoal} doneBefore={q.doneToday} backHref={deckId ? `/flashcards/paquet?id=${deckId}` : "/flashcards"} />;
+  return <Session initial={q.items} goal={q.dailyGoal} doneBefore={q.doneToday} streak={q.streak} backHref={deckId ? `/flashcards/paquet?id=${deckId}` : "/flashcards"} />;
 }

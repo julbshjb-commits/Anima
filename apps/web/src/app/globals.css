@@ -231,6 +231,32 @@ main > *:nth-child(n + 5) { animation-delay: 0.24s; }
 .souleve { transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.35s; }
 .souleve:hover { transform: translateY(-4px); border-color: rgb(230 200 145 / 0.35); }
 
+/* Séance de révision : lueurs qui dérivent, carte qui arrive puis flotte, éclat à chaque réponse. */
+@keyframes derive { 50% { transform: translate(70px, -40px) scale(1.15); } }
+@keyframes derive-2 { 50% { transform: translate(-60px, 30px) scale(0.92); } }
+@keyframes berce { 50% { transform: translateY(-6px); } }
+@keyframes arrive { from { opacity: 0; transform: translateY(30px) scale(0.96); } }
+@keyframes eclat { from { opacity: 0.9; transform: scale(0.4); } to { opacity: 0; transform: scale(2.2); } }
+.lueur { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+.lueur-1 { animation: derive 14s ease-in-out infinite; }
+.lueur-2 { animation: derive-2 18s ease-in-out infinite; }
+.berce { animation: berce 5s ease-in-out infinite; }
+.arrive { animation: arrive 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+.eclat {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 240px;
+  height: 240px;
+  margin: -120px 0 0 -120px;
+  border-radius: 50%;
+  border: 2px solid rgb(230 200 145 / 0.6);
+  animation: eclat 0.8s ease-out both;
+  pointer-events: none;
+}
+.choix { transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease; }
+.choix:hover { transform: translateY(-3px); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;

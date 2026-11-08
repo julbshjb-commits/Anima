@@ -54,17 +54,27 @@ async function todayCounts(supabase: Client, start: string) {
 }
 
 /** File d'une séance (un paquet, ou tous). */
-export async function getStudyQueue(deckId: string | null): Promise<{ items: StudyItem[]; endOfDay: string; dailyGoal: number; doneToday: number }> {
+export async function getStudyQueue(
+  deckId: string | null,
+): Promise<{ items: StudyItem[]; endOfDay: string; dailyGoal: number; doneToday: number; streak: number }> {
   const { supabase } = await requireUser();
-  const { start, end } = dayBounds();
-  const [all, counts] = await Promise.all([loadAll(supabase), todayCounts(supabase, start)]);
+  const now = new Date();
+  const { day, start, end } = dayBounds(now);
+  const since = new Date(now.getTime() - 120 * 86_400_000).toISOString();
+  const [all, counts, logs] = await Promise.all([
+    loadAll(supabase),
+    todayCounts(supabase, start),
+    supabase.from("card_reviews").select("reviewed_at").gte("reviewed_at", since).limit(20000),
+  ]);
+  // Série de jours si la personne révise aujourd'hui (affichée en fin de séance).
+  const streak = streakDays([...Object.keys(reviewsByDay(logs.data ?? [])), day], day);
   const items = studyItems(all, deckId);
   const queue = buildQueue(items, {
     endOfDay: end,
     newLeft: all.settings.new_per_day - counts.newDone,
     reviewsLeft: all.settings.reviews_per_day - counts.reviewDone,
   });
-  return { items: queue, endOfDay: end, dailyGoal: all.settings.daily_goal, doneToday: counts.done };
+  return { items: queue, endOfDay: end, dailyGoal: all.settings.daily_goal, doneToday: counts.done, streak };
 }
 
 function studyItems(all: Awaited<ReturnType<typeof loadAll>>, deckId: string | null): StudyItem[] {
