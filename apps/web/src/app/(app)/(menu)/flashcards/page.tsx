@@ -7,6 +7,7 @@ import { getOverview, type Overview } from "@/lib/flashcards";
 import { requireUser } from "@/lib/auth";
 import { btn, btnGhost, card as surface } from "@/components/ui";
 import { NewDeck, SettingsForm } from "./Forms";
+import { Onboarding } from "./Onboarding";
 
 export const metadata: Metadata = { title: "Flashcards" };
 
@@ -45,6 +46,35 @@ async function Flashcards() {
   const goalPct = Math.min(100, Math.round((o.today.done / o.settings.daily_goal) * 100));
   const exam = nextExam(o.decks, o.today.day);
 
+  if (o.decks.length === 0)
+    return (
+      <>
+        <header className="entree flex flex-col gap-1.5">
+          <p className="surtitre">{me.date}</p>
+          <h1 className="titre text-[44px] lg:text-[56px] leading-[1.02]">
+            {me.hello} <em className="italic champagne pr-2">{me.name}</em>
+          </h1>
+          <p className="text-doux max-w-xl">Bienvenue. En deux minutes, ton premier cours devient des cartes, révisées au bon moment.</p>
+        </header>
+        <Onboarding />
+        <ol style={{ ["--i" as string]: 2 }} className="entree grid sm:grid-cols-3 gap-5 max-w-4xl">
+          {[
+            ["Tes cours deviennent des cartes", "Colle un cours ou importe un PDF : tu relis chaque carte avant de la garder."],
+            ["Tu révises au bon moment", "Chaque réponse règle la prochaine révision. Dix minutes par jour suffisent."],
+            ["Seul ou avec ta promo", "Partage tes paquets par code. Tes progrès restent à toi."],
+          ].map(([t, d], i) => (
+            <li key={t} className="flex gap-3">
+              <span className="titre italic champagne text-[26px] leading-none">{i + 1}</span>
+              <span className="flex flex-col gap-1">
+                <span className="text-sm font-medium">{t}</span>
+                <span className="text-xs text-doux leading-relaxed">{d}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </>
+    );
+
   return (
     <>
       {/* Sur téléphone, la carte du jour passe avant les boutons (display: contents). */}
@@ -64,7 +94,7 @@ async function Flashcards() {
             <span className="sm:hidden">Depuis une note</span>
             <span className="max-sm:hidden">Créer depuis une note</span>
           </Link>
-          <NewDeck subjects={subjects} open={o.decks.length === 0} />
+          <NewDeck subjects={subjects} />
         </div>
       </header>
 

@@ -3,11 +3,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getGenerateSources } from "@/lib/flashcards";
+import { requireUser } from "@/lib/auth";
 import { aiCardsAvailable } from "@/lib/ia-cartes";
 import { IconRetour } from "@/components/icons";
 import { Generator } from "./Generator";
 
-export const metadata: Metadata = { title: "Créer des cartes depuis une note" };
+export const metadata: Metadata = { title: "Créer des cartes depuis un cours" };
 
 const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
@@ -24,7 +25,10 @@ export default function GenererPage(props: PageProps<"/flashcards/generer">) {
 async function Generer({ searchParams }: PageProps<"/flashcards/generer">) {
   await connection();
   const sp = await searchParams;
-  const src = await getGenerateSources(isUuid(sp.note) ? sp.note : null);
+  const [src, { user }] = await Promise.all([getGenerateSources(isUuid(sp.note) ? sp.note : null), requireUser()]);
+  // Premier lancement : la matière et la date d'examen choisies servent au nouveau paquet.
+  const subject = typeof sp.matiere === "string" && sp.matiere.trim() ? sp.matiere.trim().slice(0, 80) : null;
+  const exam = typeof sp.examen === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sp.examen) ? sp.examen : null;
   const fileId = isUuid(sp.fichier) && src.files.some((f) => f.id === sp.fichier) ? sp.fichier : null;
   const deckId = isUuid(sp.paquet) && src.decks.some((d) => d.id === sp.paquet) ? sp.paquet : null;
   return (
@@ -40,11 +44,22 @@ async function Generer({ searchParams }: PageProps<"/flashcards/generer">) {
           Des cartes <em className="italic champagne pr-1">depuis tes cours</em>
         </h1>
         <p className="text-doux max-w-2xl leading-relaxed">
-          Choisis une note ou un document : Anima te propose des cartes, tu les relis, tu corriges ou retires ce qui ne va pas, puis tu les ranges dans un paquet.
-          Rien n'est enregistré avant que tu appuies sur « Garder ».
+          Colle un cours, choisis une note ou importe un PDF : Anima te propose des cartes, tu les relis, tu corriges ou retires ce qui ne va pas, puis tu les ranges dans un
+          paquet. Rien n'est enregistré avant que tu appuies sur « Garder ».
         </p>
       </header>
-      <Generator notes={src.notes} files={src.files} decks={src.decks} initialNote={src.note} initialFile={fileId} initialDeck={deckId} aiAvailable={aiCardsAvailable()} />
+      <Generator
+        userId={user.id}
+        notes={src.notes}
+        files={src.files}
+        decks={src.decks}
+        initialNote={src.note}
+        initialFile={fileId}
+        initialDeck={deckId}
+        initialSubject={deckId ? null : subject}
+        initialExam={deckId ? null : exam}
+        aiAvailable={aiCardsAvailable()}
+      />
     </>
   );
 }

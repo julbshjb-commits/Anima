@@ -1,8 +1,9 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CARD_KINDS, cardFace, clozeNumbers, type CardKind, type DraftCard } from "@anima/core";
 import { btn, btnGhost } from "@/components/ui";
+import { uploadToDrive } from "@/lib/upload";
 import { draftFromSource, saveDrafts } from "../actions";
 import { field } from "../Forms";
 
@@ -10,41 +11,60 @@ type Draft = DraftCard & { key: number; keep: boolean };
 let seq = 0;
 const withKeys = (cards: DraftCard[]): Draft[] => cards.map((c) => ({ ...c, key: ++seq, keep: true }));
 
+type Source = "texte" | "note" | "fichier";
+const SOURCES: { id: Source; label: string }[] = [
+  { id: "texte", label: "Coller un cours" },
+  { id: "note", label: "Une note" },
+  { id: "fichier", label: "Un PDF" },
+];
+
 export function Generator({
+  userId,
   notes,
-  files,
+  files: initialFiles,
   decks,
   initialNote,
   initialFile,
   initialDeck,
+  initialSubject = null,
+  initialExam = null,
   aiAvailable,
 }: {
+  userId: string;
   notes: { id: string; title: string }[];
   files: { id: string; name: string; mime_type: string }[];
   initialFile: string | null;
   decks: { id: string; title: string; subject: string | null }[];
   initialNote: { id: string; title: string; text: string } | null;
   initialDeck: string | null;
+  /** Matière et date d'examen choisies au premier lancement, pour le nouveau paquet. */
+  initialSubject?: string | null;
+  initialExam?: string | null;
   aiAvailable: boolean;
 }) {
   const router = useRouter();
-  const [from, setFrom] = useState<"note" | "fichier">(initialFile ? "fichier" : "note");
+  const [from, setFrom] = useState<Source>(initialFile ? "fichier" : initialNote || notes.length ? "note" : "texte");
   const [noteId, setNoteId] = useState(initialNote?.id ?? notes[0]?.id ?? "");
-  const [fileId, setFileId] = useState(initialFile ?? files[0]?.id ?? "");
-  const sourceId = from === "note" ? noteId : fileId;
+  const [files, setFiles] = useState(initialFiles);
+  const [fileId, setFileId] = useState(initialFile ?? initialFiles[0]?.id ?? "");
+  const [pasted, setPasted] = useState("");
+  const [pastedTitle, setPastedTitle] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
+  const ready = from === "texte" ? pasted.trim().length > 0 : from === "note" ? !!noteId : !!fileId;
   const isPdf = from === "fichier" && files.find((f) => f.id === fileId)?.mime_type === "application/pdf";
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [via, setVia] = useState<"auto" | "ia" | "manuel">("auto");
   const [msg, setMsg] = useState<string | null>(null);
-  const [deckId, setDeckId] = useState<string>(initialDeck ?? decks[0]?.id ?? "");
-  const [newDeck, setNewDeck] = useState(initialNote?.title ?? files.find((f) => f.id === initialFile)?.name.replace(/\.[a-z0-9]+$/i, "") ?? "");
+  const [deckId, setDeckId] = useState<string>(initialDeck ?? (initialSubject ? "" : (decks[0]?.id ?? "")));
+  const [newDeck, setNewDeck] = useState(initialSubject ?? initialNote?.title ?? initialFiles.find((f) => f.id === initialFile)?.name.replace(/\.[a-z0-9]+$/i, "") ?? "");
   const [pending, start] = useTransition();
   const [saving, startSave] = useTransition();
 
   const run = (mode: "auto" | "ia") =>
     start(async () => {
       setMsg(null);
-      const r = await draftFromSource(from === "note" ? { note: noteId } : { file: fileId }, mode);
+      const r = await draftFromSource(from === "texte" ? { text: pasted, title: pastedTitle } : from === "note" ? { note: noteId } : { file: fileId }, mode);
       if (r.error) setMsg(r.error);
       if (r.cards?.length) {
         setDrafts(withKeys(r.cards));
@@ -61,8 +81,9 @@ export function Generator({
       setMsg(null);
       const r = await saveDrafts({
         deckId: deckId || null,
-        newDeck: deckId ? null : newDeck || null,
-        subject: null,
+        newDeck: deckId ? null : newDeck || pastedTitle || null,
+        subject: deckId ? null : initialSubject,
+        examDate: deckId ? null : initialExam,
         noteId: from === "note" && noteId ? noteId : null,
         via,
         cards: kept.map(({ kind, front, back }) => ({ kind, front, back })),
@@ -71,17 +92,44 @@ export function Generator({
       else if (r.deckId) router.push(`/flashcards/paquet?id=${r.deckId}`);
     });
 
+  async function upload(file: File | undefined) {
+    if (!file) return;
+    setMsg(null);
+    setUploading(true);
+    const r = await uploadToDrive(userId, file);
+    setUploading(false);
+    if (picker.current) picker.current.value = "";
+    if ("error" in r) return setMsg(r.error);
+    setFiles((f) => [{ id: r.id, name: file.name, mime_type: file.type || "application/pdf" }, ...f]);
+    setFileId(r.id);
+    if (!deckId && !newDeck) setNewDeck(file.name.replace(/\.[a-z0-9]+$/i, ""));
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-2xl bg-papier border border-trait p-5 lg:p-6 flex flex-col gap-4">
-        <div className="flex gap-1 text-[13px]" role="tablist" aria-label="Source">
-          {(["note", "fichier"] as const).map((f) => (
-            <button key={f} type="button" role="tab" aria-selected={from === f} onClick={() => setFrom(f)} className={`h-8 px-3.5 rounded-full ${from === f ? "bg-noir text-casse font-medium" : "text-doux hover:text-noir"}`}>
-              {f === "note" ? "Une note" : "Un document"}
+        <div className="flex flex-wrap gap-1 text-[13px]" role="tablist" aria-label="Source">
+          {SOURCES.map((f) => (
+            <button key={f.id} type="button" role="tab" aria-selected={from === f.id} onClick={() => setFrom(f.id)} className={`h-8 px-3.5 rounded-full ${from === f.id ? "bg-noir text-casse font-medium" : "text-doux hover:text-noir"}`}>
+              {f.label}
             </button>
           ))}
         </div>
-        {from === "note" ? (
+        {from === "texte" ? (
+          <div className="flex flex-col gap-2">
+            <input value={pastedTitle} onChange={(e) => setPastedTitle(e.target.value)} maxLength={120} placeholder="Titre du cours (facultatif) : Cours 4, le cœur" aria-label="Titre du cours" className={field} />
+            <textarea
+              value={pasted}
+              onChange={(e) => setPasted(e.target.value)}
+              rows={9}
+              maxLength={120_000}
+              aria-label="Texte du cours"
+              placeholder="Colle ici ton cours, tes notes ou un extrait de manuel."
+              className={`${field} h-auto py-3 text-[15px] leading-relaxed resize-y`}
+            />
+            <p className="text-[11px] text-doux">{pasted.length ? `${pasted.length.toLocaleString("fr-FR")} caractères` : "Rien n'est enregistré : seules les cartes que tu gardes le seront."}</p>
+          </div>
+        ) : from === "note" ? (
           <select value={noteId} onChange={(e) => setNoteId(e.target.value)} aria-label="Note de départ" className={field}>
             {notes.length === 0 && <option value="">Aucune note pour l'instant</option>}
             {initialNote && !notes.some((n) => n.id === initialNote.id) && <option value={initialNote.id}>{initialNote.title}</option>}
@@ -92,14 +140,21 @@ export function Generator({
             ))}
           </select>
         ) : (
-          <select value={fileId} onChange={(e) => setFileId(e.target.value)} aria-label="Document de départ" className={field}>
-            {files.length === 0 && <option value="">Aucun PDF ni fichier texte dans Mes fichiers</option>}
-            {files.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {files.length > 0 && (
+              <select value={fileId} onChange={(e) => setFileId(e.target.value)} aria-label="Document de départ" className={`${field} flex-1`}>
+                {files.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <input ref={picker} type="file" accept="application/pdf,.pdf,text/plain,.txt,.md" className="sr-only" onChange={(e) => upload(e.target.files?.[0])} tabIndex={-1} aria-hidden />
+            <button type="button" disabled={uploading} onClick={() => picker.current?.click()} className={`${btnGhost} shrink-0`}>
+              {uploading ? "Envoi…" : files.length ? "Importer un autre PDF" : "Importer un PDF ou un fichier texte"}
+            </button>
+          </div>
         )}
         <div className="grid md:grid-cols-2 gap-3">
           <div className="rounded-xl border border-trait p-4 flex flex-col gap-2.5">
@@ -108,7 +163,7 @@ export function Generator({
               Reprend les lignes déjà écrites comme des fiches : « Terme : définition », « Question ? Réponse », ou les trous {"{{c1::…}}"}. Sans IA, rien ne quitte Anima.
             </p>
             {isPdf && <p className="text-[11px] text-doux">Un PDF se lit avec l'IA.</p>}
-            <button type="button" disabled={!sourceId || pending || isPdf} onClick={() => run("auto")} className={`${btnGhost} self-start`}>
+            <button type="button" disabled={!ready || pending || isPdf} onClick={() => run("auto")} className={`${btnGhost} self-start`}>
               {pending ? "Lecture…" : "Repérer les cartes"}
             </button>
           </div>
@@ -117,8 +172,8 @@ export function Generator({
             <p className="text-xs text-doux leading-relaxed">
               Claude lit le texte et propose une idée par carte, courte et fidèle au texte, sans rien inventer. Le contenu n'est envoyé à Claude que quand tu appuies.
             </p>
-            <button type="button" disabled={!sourceId || pending || !aiAvailable} onClick={() => run("ia")} className={`${btn} self-start`}>
-              {pending ? "L'IA lit ta note…" : "Proposer des cartes"}
+            <button type="button" disabled={!ready || pending || !aiAvailable} onClick={() => run("ia")} className={`${btn} self-start`}>
+              {pending ? "L'IA lit ton cours…" : "Proposer des cartes"}
             </button>
             {!aiAvailable && <p className="text-[11px] text-doux">Pas encore activé sur Anima. En attendant, ton assistant Claude relié à Anima peut proposer des cartes, que tu relis dans le paquet.</p>}
           </div>

@@ -156,15 +156,18 @@ export async function approveCards(form: FormData) {
 
 export type DraftResult = { error?: string; cards?: DraftCard[]; via?: "auto" | "ia" };
 
-/** Brouillons tirés d'une note ou d'un document (texte ou PDF) du disque. */
-export async function draftFromSource(source: { note?: string; file?: string }, mode: "auto" | "ia"): Promise<DraftResult> {
+/** Brouillons tirés d'un texte collé, d'une note ou d'un document (texte ou PDF) du disque. */
+export async function draftFromSource(source: { note?: string; file?: string; text?: string; title?: string }, mode: "auto" | "ia"): Promise<DraftResult> {
   const { supabase } = await requireUser();
   let title = "";
   let text = "";
   let pdf: string | null = null;
   const noteId = uuid(source.note);
   const fileId = uuid(source.file);
-  if (noteId) {
+  if (typeof source.text === "string" && source.text.trim()) {
+    title = (typeof source.title === "string" && source.title.trim() ? source.title.trim() : "Cours").slice(0, 120);
+    text = source.text.trim().slice(0, 120_000);
+  } else if (noteId) {
     const { data: note } = await supabase.from("notes").select("id, title, body").eq("id", noteId).maybeSingle();
     if (!note) return { error: "Note introuvable." };
     const { data: blocks } = await supabase.from("note_blocks").select("content").eq("note_id", noteId).order("created_at").limit(500);
@@ -182,7 +185,7 @@ export async function draftFromSource(source: { note?: string; file?: string }, 
     title = file.name;
     if (isPdf) pdf = Buffer.from(await blob.arrayBuffer()).toString("base64");
     else text = (await blob.text()).trim();
-  } else return { error: "Choisis une note ou un document." };
+  } else return { error: "Colle un texte, ou choisis une note ou un document." };
   if (!pdf && !text) return { error: "Ce contenu est vide." };
   if (mode === "auto") {
     const cards = extractDraftCards(text);
@@ -203,6 +206,7 @@ const saveSchema = z.object({
   deckId: z.string().regex(/^[0-9a-f-]{36}$/i).nullable(),
   newDeck: z.string().trim().max(120).nullable(),
   subject: z.string().trim().max(80).nullable(),
+  examDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
   noteId: z.string().regex(/^[0-9a-f-]{36}$/i).nullable(),
   via: z.enum(["manuel", "ia", "auto"]),
   cards: z.array(draftCardSchema).min(1, "Garde au moins une carte.").max(200),
@@ -221,7 +225,11 @@ export async function saveDrafts(input: z.input<typeof saveSchema>): Promise<{ e
   let deckId = parsed.data.deckId;
   if (!deckId) {
     const title = parsed.data.newDeck || "Nouveau paquet";
-    const { data, error } = await supabase.from("decks").insert({ title, subject: parsed.data.subject || null }).select("id").single();
+    const { data, error } = await supabase
+      .from("decks")
+      .insert({ title, subject: parsed.data.subject || null, exam_date: parsed.data.examDate })
+      .select("id")
+      .single();
     if (error || !data) return { error: "Le paquet n'a pas pu être créé." };
     deckId = data.id;
   }
