@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { coverOf } from "@anima/core";
 import { getOverview, type Overview } from "@/lib/flashcards";
+import { requireUser } from "@/lib/auth";
 import { btn, btnGhost, card as surface } from "@/components/ui";
 import { NewDeck, SettingsForm } from "./Forms";
 
@@ -19,11 +20,22 @@ export default function FlashcardsPage() {
   );
 }
 
+/** Prénom et salutation selon l'heure de Paris. */
+async function whoAmI() {
+  const { supabase, user } = await requireUser();
+  const { data } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
+  const name = (data?.display_name || user.email?.split("@")[0] || "").split(" ")[0];
+  const now = new Date();
+  const hour = Number(new Intl.DateTimeFormat("fr-FR", { hour: "numeric", hourCycle: "h23", timeZone: "Europe/Paris" }).formatToParts(now).find((x) => x.type === "hour")?.value ?? 12);
+  const date = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Paris" }).format(now);
+  return { name, date, hello: hour >= 18 || hour < 5 ? "Bonsoir" : "Bonjour" };
+}
+
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n > 1 ? many : one}`;
 
 async function Flashcards() {
   await connection();
-  const o = await getOverview();
+  const [o, me] = await Promise.all([getOverview(), whoAmI()]);
   const subjects = [...new Set(o.decks.map((d) => d.subject).filter((s): s is string => !!s))];
   const groups = new Map<string, Overview["decks"]>();
   for (const d of o.decks) {
@@ -34,11 +46,11 @@ async function Flashcards() {
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="entree flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
-          <p className="surtitre">Réviser sans s'épuiser</p>
+          <p className="surtitre">{me.date}</p>
           <h1 className="titre text-[44px] lg:text-[56px] leading-[1.02]">
-            <em className="italic champagne pr-2">Flashcards</em>
+            {me.hello} <em className="italic champagne pr-2">{me.name}</em>
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -50,7 +62,7 @@ async function Flashcards() {
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
-        <section className="relative isolate overflow-hidden rounded-2xl bg-[#111112] text-blanc p-8 lg:p-10 flex flex-col gap-6 min-h-[260px] justify-between">
+        <section style={{ ["--i" as string]: 1 }} className="entree relative isolate overflow-hidden rounded-2xl bg-[#111112] border border-champagne/25 shadow-[0_40px_90px_-50px_rgba(230,200,145,.45)] text-blanc p-8 lg:p-10 flex flex-col gap-6 min-h-[260px] justify-between">
           <div className="halo" aria-hidden>
             <i />
             <i />
@@ -61,7 +73,7 @@ async function Flashcards() {
           {o.today.dueLeft > 0 ? (
             <>
               <h2 className="relative titre text-[40px] lg:text-[52px] leading-[1.02]">
-                {plural(o.today.dueLeft, "carte")} <span className="italic text-blanc/70">à revoir</span>
+                <span className="chiffre-or">{plural(o.today.dueLeft, "carte")}</span> <span className="italic text-blanc/70">à revoir</span>
               </h2>
               <p className="relative text-[15px] text-blanc/75">
                 {[
@@ -73,7 +85,7 @@ async function Flashcards() {
                   .join(" · ")}
               </p>
               <div className="relative">
-                <Link href="/flashcards/reviser" className="inline-flex items-center h-12 px-7 rounded-full bg-[linear-gradient(180deg,#f0d8a8,#d4ad6c)] text-nuit text-sm font-semibold shadow-[0_14px_40px_-12px_rgba(224,184,120,.7)]">
+                <Link href="/flashcards/reviser" className="bouton-or inline-flex items-center h-12 px-7 rounded-full text-nuit text-sm font-semibold shadow-[0_14px_40px_-12px_rgba(224,184,120,.7)]">
                   Commencer la révision
                 </Link>
               </div>
@@ -90,7 +102,7 @@ async function Flashcards() {
           )}
         </section>
 
-        <section className={`${surface} p-6 flex flex-col gap-5`}>
+        <section style={{ ["--i" as string]: 2 }} className={`${surface} entree p-6 flex flex-col gap-5`}>
           <div className="flex items-center gap-5">
             <Ring pct={goalPct} />
             <div className="flex flex-col gap-0.5">
@@ -117,7 +129,7 @@ async function Flashcards() {
       )}
 
       {o.decks.length > 0 && (
-        <section className="flex flex-col gap-6">
+        <section style={{ ["--i" as string]: 3 }} className="entree flex flex-col gap-6">
           {[...groups.entries()].map(([subject, decks]) => (
             <div key={subject || "sans"} className="flex flex-col gap-3">
               <h2 className="surtitre">{subject || "Sans matière"}</h2>
@@ -149,7 +161,7 @@ function DeckTile({ d }: { d: Overview["decks"][number] }) {
   const s = d.stats;
   const pct = s.total ? Math.round((s.mature / s.total) * 100) : 0;
   return (
-    <li className={`${surface} p-5 flex flex-col gap-4`}>
+    <li className={`${surface} souleve p-5 flex flex-col gap-4`}>
       <Link href={`/flashcards/paquet?id=${d.id}`} className="flex items-start gap-4 group">
         <span aria-hidden className="relative w-12 h-16 shrink-0 rounded-md shadow-[0_12px_24px_-12px_rgba(0,0,0,.8)]" style={{ background: c.bg }}>
           <span className="absolute inset-x-1.5 top-2 h-[3px] rounded-full opacity-40" style={{ background: c.fg }} />
@@ -170,7 +182,7 @@ function DeckTile({ d }: { d: Overview["decks"][number] }) {
         <span className="ml-auto text-xs text-doux tabular-nums">{pct} % acquis</span>
       </div>
       <span className="h-1 rounded-full bg-lin overflow-hidden" aria-hidden>
-        <i className="block h-full bg-champagne/80" style={{ width: `${pct}%` }} />
+        <i className="jauge block h-full bg-champagne/80" style={{ width: `${pct}%` }} />
       </span>
       {s.due + s.fresh > 0 && (
         <Link href={`/flashcards/reviser?paquet=${d.id}`} className={`${btn} self-start h-9 px-4 text-[13px]`}>
@@ -213,7 +225,7 @@ function Ring({ pct }: { pct: number }) {
         strokeLinecap="round"
         strokeDasharray={`${(len * pct) / 100} ${len}`}
         transform="rotate(-90 38 38)"
-        className="transition-[stroke-dasharray] duration-700"
+        className="anneau-dessin transition-[stroke-dasharray] duration-700"
       />
       <defs>
         <linearGradient id="or" x1="0" x2="1" y1="0" y2="1">

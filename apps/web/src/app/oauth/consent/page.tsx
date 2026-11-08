@@ -18,7 +18,7 @@ export default function ConsentPage({ searchParams }: PageProps<"/oauth/consent"
   return (
     <main className="flex-1 flex justify-center px-5 py-10">
       <div className="w-full max-w-lg flex flex-col gap-8">
-        <Link href="/aujourdhui" className="titre text-2xl">
+        <Link href="/flashcards" className="titre text-2xl">
           Anima
         </Link>
         <Suspense fallback={<p className="text-doux">Chargement…</p>}>

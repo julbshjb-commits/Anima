@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Anima",
     description: "Retiens tout ce que tu apprends : tes cours deviennent des flashcards, révisées au bon moment. Privé, hébergé en Europe.",
     lang: "fr",
-    start_url: "/aujourdhui",
+    start_url: "/flashcards",
     display: "standalone",
     background_color: "#F5F3EE",
     theme_color: "#151515",

@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { LegalFooter } from "@/components/LegalPage";
 import { MenuLinks, SettingsLink, TabBar } from "@/components/MenuLinks";
-import { IconBibliotheque, IconCartes, IconCle, IconDossier, IconReglages } from "@/components/icons";
+import { IconBibliotheque, IconCle, IconCoche, IconDossier, IconReglages } from "@/components/icons";
 
 /** Écrans de navigation (journaux, rejoindre, compte) : barre latérale des maquettes. */
 export default function MenuLayout({ children }: LayoutProps<"/">) {
@@ -14,7 +14,7 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
         aria-label="Navigation principale"
         className="hidden lg:flex w-[264px] shrink-0 sticky top-0 h-dvh flex-col gap-7 px-5 py-7 border-r border-trait"
       >
-        <Link href="/aujourdhui" className="titre italic text-[34px] leading-none px-3 champagne self-start">
+        <Link href="/flashcards" className="titre italic text-[34px] leading-none px-3 champagne self-start">
           anima
         </Link>
         <MenuLinks />
@@ -27,11 +27,11 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
       </nav>
 
       <header className="lg:hidden sticky top-0 z-10 h-14 px-4 flex items-center gap-1 border-b border-trait bg-fond/90">
-        <Link href="/aujourdhui" className="titre italic text-[26px] mr-auto champagne">
+        <Link href="/flashcards" className="titre italic text-[26px] mr-auto champagne">
           anima
         </Link>
-        <Link href="/flashcards" aria-label="Flashcards" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
-          <IconCartes />
+        <Link href="/organiser" aria-label="Organiser" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
+          <IconCoche />
         </Link>
         <Link href="/bibliotheque" aria-label="Bibliothèque" className="w-10 h-10 grid place-items-center rounded-full hover:bg-lin">
           <IconBibliotheque />

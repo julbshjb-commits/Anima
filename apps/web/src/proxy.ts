@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
       const dest = new URL(suite, request.url);
       if (dest.origin === request.nextUrl.origin) return NextResponse.redirect(dest);
     }
-    to.pathname = "/aujourdhui";
+    to.pathname = "/flashcards";
     return NextResponse.redirect(to);
   }
   return response;
