@@ -244,6 +244,62 @@ export type FileRow = {
 
 export type AiAccess = { user_id: string; spaces: string[]; updated_at: Timestamp };
 
+export type PublicProfile = {
+  id: string;
+  handle: string;
+  name: string;
+  bio: string;
+  avatar_path: string | null;
+  is_private: boolean;
+  age_confirmed_at: Timestamp;
+  suspended_at: Timestamp | null;
+  followers_count: number;
+  following_count: number;
+  posts_count: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type PublicPost = {
+  id: string;
+  author_id: string;
+  body: string;
+  mood: Mood | null;
+  photo_path: string | null;
+  source: "libre" | "journal" | "note" | "citation";
+  quote_by: string | null;
+  likes_count: number;
+  comments_count: number;
+  hidden_at: Timestamp | null;
+  created_at: Timestamp;
+  edited_at: Timestamp | null;
+};
+
+export type Follow = { follower_id: string; followee_id: string; status: "accepted" | "pending"; created_at: Timestamp };
+export type PostLike = { post_id: string; user_id: string; created_at: Timestamp };
+export type PostComment = { id: string; post_id: string; author_id: string; body: string; hidden_at: Timestamp | null; created_at: Timestamp };
+export type Block = { blocker_id: string; blocked_id: string; created_at: Timestamp };
+export type Report = {
+  id: string;
+  reporter_id: string;
+  target_kind: "post" | "comment" | "profile";
+  target_id: string;
+  reason: "spam" | "harcelement" | "haine" | "nudite" | "violence" | "mineur" | "autre";
+  details: string;
+  created_at: Timestamp;
+  resolved_at: Timestamp | null;
+  resolution: "retire" | "garde" | "suspendu" | null;
+};
+export type AppNotification = {
+  id: string;
+  user_id: string;
+  actor_id: string;
+  kind: "follow" | "follow_request" | "follow_accepted" | "like" | "comment";
+  post_id: string | null;
+  created_at: Timestamp;
+  read_at: Timestamp | null;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -320,6 +376,15 @@ export type Database = {
       files: Table<FileRow, { name: string; storage_path: string; folder_id?: string | null; starred?: boolean; note_id?: string | null; trashed_at?: string | null }>;
       reading_goals: Table<ReadingGoal, { year: number; target: number }>;
       notebook_invites: Table<{ id: string; notebook_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
+      public_profiles: Table<PublicProfile, { id: string; handle: string; name: string; bio?: string; avatar_path?: string | null; is_private?: boolean }>;
+      posts: Table<PublicPost, { body?: string; mood?: Mood | null; photo_path?: string | null; source?: PublicPost["source"]; quote_by?: string | null }>;
+      follows: Table<Follow, { followee_id: string; status?: "accepted" | "pending" }>;
+      post_likes: Table<PostLike, { post_id: string }>;
+      post_comments: Table<PostComment, { post_id: string; body: string }>;
+      blocks: Table<Block, { blocked_id: string }>;
+      reports: Table<Report, { target_kind: Report["target_kind"]; target_id: string; reason: Report["reason"]; details?: string }>;
+      notifications: Table<AppNotification, never>;
+      app_admins: Table<{ user_id: string; created_at: Timestamp }, never>;
     };
     Views: Record<never, never>;
     Functions: {
@@ -337,6 +402,10 @@ export type Database = {
       toggle_question: { Args: { p_block_id: string }; Returns: undefined };
       storage_used_bytes: { Args: Record<string, never>; Returns: number };
       file_quota_bytes: { Args: Record<string, never>; Returns: number };
+      handle_available: { Args: { p_handle: string }; Returns: boolean };
+      moderate: { Args: { p_kind: "post" | "comment" | "profile"; p_target: string; p_action: "retire" | "garde" | "suspendu" }; Returns: undefined };
+      mark_notifications_read: { Args: Record<string, never>; Returns: undefined };
+      is_app_admin: { Args: Record<string, never>; Returns: boolean };
     };
     Enums: {
       journal_kind: JournalKind;
