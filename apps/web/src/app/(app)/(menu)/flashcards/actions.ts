@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { extractText } from "unpdf";
 import {
   cardSchema,
   deckSchema,
@@ -179,11 +180,18 @@ export async function draftFromSource(source: { note?: string; file?: string; te
     const isPdf = file.mime_type === "application/pdf";
     if (!isPdf && !file.mime_type.startsWith("text/")) return { error: "Seuls les PDF et les fichiers texte peuvent devenir des cartes." };
     if (file.size_bytes > 20 * 1024 * 1024) return { error: "Document trop lourd (20 Mo au plus)." };
-    if (isPdf && mode === "auto") return { error: "Un PDF se lit avec l'IA. Le repérage automatique marche sur les notes et les fichiers texte." };
     const { data: blob } = await supabase.storage.from("fichiers").download(file.storage_path);
     if (!blob) return { error: "Le document n'a pas pu être lu." };
     title = file.name;
-    if (isPdf) pdf = Buffer.from(await blob.arrayBuffer()).toString("base64");
+    if (isPdf && mode === "auto") {
+      // Repérage sans IA : on lit le texte du PDF ici, sur le serveur.
+      try {
+        const { text: pdfText } = await extractText(new Uint8Array(await blob.arrayBuffer()), { mergePages: true });
+        text = pdfText.trim();
+      } catch {
+        return { error: "Ce PDF n'a pas pu être lu. Essaie de coller son texte dans « Coller un cours »." };
+      }
+    } else if (isPdf) pdf = Buffer.from(await blob.arrayBuffer()).toString("base64");
     else text = (await blob.text()).trim();
   } else return { error: "Colle un texte, ou choisis une note ou un document." };
   if (!pdf && !text) return { error: "Ce contenu est vide." };
