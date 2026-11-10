@@ -316,3 +316,17 @@ main > *:nth-child(n + 5) { animation-delay: 0.24s; }
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+/* Éclat doré autour du cœur quand on aime une publication. */
+.eclat {
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(230, 200, 145, 0.55) 0 30%, transparent 62%);
+  animation: eclat 0.6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes eclat {
+  from { transform: scale(0.4); opacity: 1; }
+  to { transform: scale(1.8); opacity: 0; }
+}

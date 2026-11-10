@@ -173,3 +173,38 @@ export const IconCartes = (p: P) => (
     <path d="M7 12h5M7 15.5h3" />
   </Svg>
 );
+export const IconBoussole = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m15.5 8.5-2 5-5 2 2-5z" />
+  </Svg>
+);
+export const IconCloche = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z" />
+    <path d="M10 20.5a2 2 0 0 0 4 0" />
+  </Svg>
+);
+export const IconBulle = (p: P) => (
+  <Svg {...p}>
+    <path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z" />
+  </Svg>
+);
+export const IconLoupe = (p: P) => (
+  <Svg {...p}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="m20 20-4.2-4.2" />
+  </Svg>
+);
+export const IconPoints = (p: P) => (
+  <Svg {...p}>
+    <circle cx="5" cy="12" r="1" />
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+  </Svg>
+);
+export const IconGuillemets = (p: P) => (
+  <Svg {...p}>
+    <path d="M9 7H6a2 2 0 0 0-2 2v3h5V7zM9 12c0 3-1.5 5-4 5.5M20 7h-3a2 2 0 0 0-2 2v3h5V7zM20 12c0 3-1.5 5-4 5.5" />
+  </Svg>
+);

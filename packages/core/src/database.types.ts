@@ -264,6 +264,22 @@ export type Deck = {
   updated_at: Timestamp;
 };
 
+export type PublicProfile = {
+  id: string;
+  handle: string;
+  name: string;
+  bio: string;
+  avatar_path: string | null;
+  is_private: boolean;
+  age_confirmed_at: Timestamp;
+  suspended_at: Timestamp | null;
+  followers_count: number;
+  following_count: number;
+  posts_count: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
 export type DeckPreview = {
   title: string;
   subject: string | null;
@@ -328,6 +344,46 @@ export type FlashcardSettings = {
   reviews_per_day: number;
   daily_goal: number;
   updated_at: Timestamp;
+};
+
+export type PublicPost = {
+  id: string;
+  author_id: string;
+  body: string;
+  mood: Mood | null;
+  photo_path: string | null;
+  source: "libre" | "journal" | "note" | "citation";
+  quote_by: string | null;
+  likes_count: number;
+  comments_count: number;
+  hidden_at: Timestamp | null;
+  created_at: Timestamp;
+  edited_at: Timestamp | null;
+};
+
+export type Follow = { follower_id: string; followee_id: string; status: "accepted" | "pending"; created_at: Timestamp };
+export type PostLike = { post_id: string; user_id: string; created_at: Timestamp };
+export type PostComment = { id: string; post_id: string; author_id: string; body: string; hidden_at: Timestamp | null; created_at: Timestamp };
+export type Block = { blocker_id: string; blocked_id: string; created_at: Timestamp };
+export type Report = {
+  id: string;
+  reporter_id: string;
+  target_kind: "post" | "comment" | "profile";
+  target_id: string;
+  reason: "spam" | "harcelement" | "haine" | "nudite" | "violence" | "mineur" | "autre";
+  details: string;
+  created_at: Timestamp;
+  resolved_at: Timestamp | null;
+  resolution: "retire" | "garde" | "suspendu" | null;
+};
+export type AppNotification = {
+  id: string;
+  user_id: string;
+  actor_id: string;
+  kind: "follow" | "follow_request" | "follow_accepted" | "like" | "comment";
+  post_id: string | null;
+  created_at: Timestamp;
+  read_at: Timestamp | null;
 };
 
 export type Database = {
@@ -412,6 +468,15 @@ export type Database = {
       card_schedules: Table<CardSchedule, never, Partial<Omit<CardSchedule, "id" | "owner_id" | "card_id" | "variant">>>;
       card_reviews: Table<CardReview, { schedule_id: string | null; deck_id: string | null; rating: number; state_before: CardState; interval_before?: number; interval_after?: number; duration_ms?: number | null; reviewed_at?: string }>;
       flashcard_settings: Table<FlashcardSettings, { new_per_day?: number; reviews_per_day?: number; daily_goal?: number; updated_at?: string }>;
+      public_profiles: Table<PublicProfile, { id: string; handle: string; name: string; bio?: string; avatar_path?: string | null; is_private?: boolean }>;
+      posts: Table<PublicPost, { body?: string; mood?: Mood | null; photo_path?: string | null; source?: PublicPost["source"]; quote_by?: string | null }>;
+      follows: Table<Follow, { followee_id: string; status?: "accepted" | "pending" }>;
+      post_likes: Table<PostLike, { post_id: string }>;
+      post_comments: Table<PostComment, { post_id: string; body: string }>;
+      blocks: Table<Block, { blocked_id: string }>;
+      reports: Table<Report, { target_kind: Report["target_kind"]; target_id: string; reason: Report["reason"]; details?: string }>;
+      notifications: Table<AppNotification, never>;
+      app_admins: Table<{ user_id: string; created_at: Timestamp }, never>;
     };
     Views: Record<never, never>;
     Functions: {
@@ -434,6 +499,10 @@ export type Database = {
       deck_import: { Args: { p_code: string }; Returns: string | null };
       deck_updates: { Args: { p_deck_id: string }; Returns: number };
       deck_pull: { Args: { p_deck_id: string }; Returns: number };
+      handle_available: { Args: { p_handle: string }; Returns: boolean };
+      moderate: { Args: { p_kind: "post" | "comment" | "profile"; p_target: string; p_action: "retire" | "garde" | "suspendu" }; Returns: undefined };
+      mark_notifications_read: { Args: Record<string, never>; Returns: undefined };
+      is_app_admin: { Args: Record<string, never>; Returns: boolean };
     };
     Enums: {
       journal_kind: JournalKind;

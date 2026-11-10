@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBibliotheque, IconCartes, IconCercles, IconCle, IconCoche, IconDossier, IconJournaux, IconNotes, IconReglages, IconSoleil } from "./icons";
+import { IconBibliotheque, IconBoussole, IconCartes, IconCercles, IconCle, IconCloche, IconCoche, IconDossier, IconJournaux, IconNotes, IconReglages, IconSoleil } from "./icons";
 
 const LINKS = [
   { href: "/flashcards", label: "Flashcards", Icon: IconCartes, match: (p: string) => p.startsWith("/flashcards") },
   { href: "/notes", label: "Notes de cours", tab: "Cours", Icon: IconNotes, match: (p: string) => p.startsWith("/notes") },
   { href: "/aujourdhui", label: "Aujourd'hui", Icon: IconSoleil, match: (p: string) => p.startsWith("/aujourdhui") },
+  { href: "/decouvrir", label: "Découvrir", Icon: IconBoussole, match: (p: string) => p.startsWith("/decouvrir") || p.startsWith("/u/") || p.startsWith("/p/") },
   { href: "/journaux", label: "Journaux", Icon: IconJournaux, match: (p: string) => p.startsWith("/journaux") },
   { href: "/organiser", label: "Organiser", Icon: IconCoche, match: (p: string) => p.startsWith("/organiser") },
   { href: "/cercles", label: "Cercles", Icon: IconCercles, match: (p: string) => p.startsWith("/cercles") },
@@ -18,13 +19,15 @@ const LINKS = [
 /** Les flashcards sont le cœur d'Anima ; le reste vient « en plus ». */
 const MAIN = LINKS.slice(0, 2);
 const MORE = LINKS.slice(2);
+/** Lien à part : il porte le compteur de notifications non lues. */
+const NOTIF = { href: "/notifications", label: "Notifications", Icon: IconCloche, match: (p: string) => p.startsWith("/notifications") } as const;
 
 const item = "relative flex items-center gap-3 h-11 px-3 rounded-2xl text-sm transition-[background-color,transform] duration-200 active:scale-[.97]";
 const active = "bg-papier text-noir font-medium";
 const idle = "text-encre hover:bg-lin hover:translate-x-0.5";
 
 /** Liens de la barre latérale : seules les rubriques qui existent vraiment. */
-export function MenuLinks() {
+export function MenuLinks({ unread = 0 }: { unread?: number }) {
   const path = usePathname();
   const row = ({ href, label, Icon, match }: (typeof LINKS)[number]) => (
     <Link key={href} href={href} aria-current={match(path) ? "page" : undefined} className={`${item} ${match(path) ? active : idle}`}>
@@ -33,16 +36,28 @@ export function MenuLinks() {
       {match(path) && <span aria-hidden className="ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />}
     </Link>
   );
+  const notifRow = ({ href, label, Icon, match }: typeof NOTIF) => (
+    <Link key={href} href={href} aria-current={match(path) ? "page" : undefined} className={`${item} ${match(path) ? active : idle}`}>
+      <Icon />
+      {label}
+      {unread > 0 ? (
+        <span className="ml-auto min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-champagne text-nuit text-[11px] font-semibold tabular-nums">{unread > 99 ? "99+" : unread}</span>
+      ) : (
+        match(path) && <span aria-hidden className="ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />
+      )}
+    </Link>
+  );
   return (
     <div className="flex flex-col gap-0.5">
       {MAIN.map(row)}
+      {notifRow(NOTIF)}
       <p className="surtitre px-3 pt-6 pb-2">Aussi dans Anima</p>
       {MORE.map(row)}
     </div>
   );
 }
 
-const TABS = [LINKS[0], LINKS[1], LINKS[2], LINKS[3], LINKS[5]] as const;
+const TABS = [LINKS[0], LINKS[1], LINKS[2], LINKS[4], LINKS[5]] as const;
 
 /** Barre d'onglets flottante (téléphone et iPad en portrait). */
 export function TabBar() {
