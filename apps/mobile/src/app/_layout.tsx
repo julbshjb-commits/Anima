@@ -4,13 +4,15 @@ import { Geist_400Regular } from '@expo-google-fonts/geist/400Regular';
 import { Geist_500Medium } from '@expo-google-fonts/geist/500Medium';
 import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { Body, Screen, Title } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { preparerNotifications, RAPPEL_ID, RAPPEL_NOMBRE } from '@/lib/rappels';
 import { supabase } from '@/lib/supabase';
 import { fonts, useColors } from '@/theme';
 
@@ -30,10 +32,26 @@ export default function RootLayout() {
 function Navigation() {
   const { session, loading } = useAuth();
   const c = useColors();
+  const router = useRouter();
+  // Un tap sur le rappel ouvre directement le test de 5 cartes (une seule fois par notification).
+  const reponse = Notifications.useLastNotificationResponse();
+  const traite = useRef<string>(undefined);
+
+  useEffect(() => {
+    preparerNotifications();
+  }, []);
 
   useEffect(() => {
     if (!loading) SplashScreen.hideAsync();
   }, [loading]);
+
+  useEffect(() => {
+    if (!session || !reponse || reponse.notification.request.identifier !== RAPPEL_ID) return;
+    const cle = `${reponse.notification.request.identifier}-${reponse.notification.date}`;
+    if (traite.current === cle) return;
+    traite.current = cle;
+    router.push({ pathname: '/flashcards/reviser', params: { limite: String(RAPPEL_NOMBRE) } });
+  }, [reponse, session, router]);
 
   if (loading) return null;
   if (!supabase) return <NotConfigured />;

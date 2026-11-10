@@ -343,6 +343,7 @@ export type FlashcardSettings = {
   new_per_day: number;
   reviews_per_day: number;
   daily_goal: number;
+  rappel_heure: string | null;
   updated_at: Timestamp;
 };
 
@@ -467,7 +468,7 @@ export type Database = {
       /** Les lignes sont créées par la base quand une carte est ajoutée. */
       card_schedules: Table<CardSchedule, never, Partial<Omit<CardSchedule, "id" | "owner_id" | "card_id" | "variant">>>;
       card_reviews: Table<CardReview, { schedule_id: string | null; deck_id: string | null; rating: number; state_before: CardState; interval_before?: number; interval_after?: number; duration_ms?: number | null; reviewed_at?: string }>;
-      flashcard_settings: Table<FlashcardSettings, { new_per_day?: number; reviews_per_day?: number; daily_goal?: number; updated_at?: string }>;
+      flashcard_settings: Table<FlashcardSettings, { new_per_day?: number; reviews_per_day?: number; daily_goal?: number; rappel_heure?: string | null; updated_at?: string }>;
       public_profiles: Table<PublicProfile, { id: string; handle: string; name: string; bio?: string; avatar_path?: string | null; is_private?: boolean }>;
       posts: Table<PublicPost, { body?: string; mood?: Mood | null; photo_path?: string | null; source?: PublicPost["source"]; quote_by?: string | null }>;
       follows: Table<Follow, { followee_id: string; status?: "accepted" | "pending" }>;
