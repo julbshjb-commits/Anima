@@ -1,14 +1,16 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { isValidInviteCode, normalizeInviteCode } from "@anima/core";
+import { isValidDeckCode, isValidInviteCode, normalizeInviteCode } from "@anima/core";
 import { requireUser } from "@/lib/auth";
 
 export type JoinState = { error?: string };
 
 export async function joinWithCode(_prev: JoinState, form: FormData): Promise<JoinState> {
   const raw = String(form.get("code") ?? "");
-  if (!isValidInviteCode(raw)) return { error: "Un code fait 6 caractères, par exemple K7M-Q2P." };
+  // 8 caractères : un paquet de flashcards partagé, qu'on regarde avant de l'ajouter.
+  if (isValidDeckCode(raw)) redirect(`/flashcards/ajouter?code=${normalizeInviteCode(raw)}`);
+  if (!isValidInviteCode(raw)) return { error: "Un code fait 6 caractères (K7M-Q2P), ou 8 pour un paquet de flashcards (K7MQ-2PXA)." };
   const { supabase } = await requireUser();
   // Un même code peut ouvrir un journal partagé, un carnet de cours ou un cercle.
   const { data, error } = await supabase.rpc("join_with_code", { p_code: normalizeInviteCode(raw) });

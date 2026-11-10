@@ -172,7 +172,7 @@ function Sidebar({ drive, p }: { drive: Drive; p: Params }) {
     <aside className="lg:w-[248px] shrink-0 px-5 py-5 lg:py-7 border-b lg:border-b-0 lg:border-r border-trait flex flex-col gap-6 lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto">
       <div className="flex items-center gap-2.5">
         <Link
-          href="/aujourdhui"
+          href="/flashcards"
           aria-label="Retour à l'accueil"
           className="w-9 h-9 shrink-0 rounded-full border border-noir/12 grid place-items-center hover:bg-lin"
         >
@@ -467,6 +467,11 @@ function Panel({ detail, drive, p }: { detail: FileDetail; drive: Drive; p: Para
           <a href={`/fichiers/ouvrir/${file.id}?telecharger=1`} className={`${btn} border border-noir/15 hover:bg-lin`}>
             Télécharger
           </a>
+          {(file.mime_type === "application/pdf" || file.mime_type.startsWith("text/")) && (
+            <a href={`/flashcards/generer?fichier=${file.id}`} className={`${btn} border border-champagne/30 text-champagne hover:bg-champagne/10`}>
+              Faire des flashcards
+            </a>
+          )}
           {mine && (
             <>
               <LinkNote id={file.id} noteId={file.note_id} notes={detail.notes} />

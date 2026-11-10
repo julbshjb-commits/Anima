@@ -21,3 +21,17 @@ export function formatInviteCode(code: string): string {
   const c = normalizeInviteCode(code);
   return c.length === INVITE_LENGTH ? `${c.slice(0, 3)}-${c.slice(3)}` : c;
 }
+
+/** Code d'un paquet de flashcards partagé : 8 caractères, sans date limite. */
+export const DECK_CODE_LENGTH = 8;
+
+export function isValidDeckCode(raw: string): boolean {
+  const code = normalizeInviteCode(raw);
+  return code.length === DECK_CODE_LENGTH && [...code].every((c) => INVITE_ALPHABET.includes(c));
+}
+
+/** Affichage lisible : « K7MQ-2PXA ». */
+export function formatDeckCode(code: string): string {
+  const c = normalizeInviteCode(code);
+  return c.length === DECK_CODE_LENGTH ? `${c.slice(0, 4)}-${c.slice(4)}` : c;
+}

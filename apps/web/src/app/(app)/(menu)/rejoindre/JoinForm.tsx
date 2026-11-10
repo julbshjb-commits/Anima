@@ -15,7 +15,7 @@ export function JoinForm() {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          maxLength={9}
+          maxLength={10}
           placeholder="K7M-Q2P"
           className="h-16 px-5 rounded-xl bg-surface border border-trait titre text-4xl tracking-[0.15em] uppercase focus:outline-none focus:border-texte placeholder:text-doux/50"
         />

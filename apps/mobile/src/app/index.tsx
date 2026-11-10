@@ -1,111 +1,159 @@
-import { JOURNAL_KIND_LABELS } from '@anima/core';
+import { coverOf, dayBounds, daysUntil, examLabel, nextExam } from '@anima/core';
 import { Link, Stack, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
-import { Body, Button, Card, Cover, ErrorText, Loading, Overline, Title } from '@/components/ui';
+import { Body, Button, Card, ErrorText, Loading, Overline, Title } from '@/components/ui';
 import { useUserId } from '@/lib/auth';
-import { createIntimeJournal, listMyJournals, type JournalCard } from '@/lib/data';
+import { loadHome, type DeckRow } from '@/lib/flashcards';
 import { useLoad } from '@/lib/useLoad';
 import { fonts, useColors } from '@/theme';
 
-export default function Journaux() {
-  const userId = useUserId();
-  const router = useRouter();
+/** Accueil de l'appli : les cartes du jour et les paquets. Le reste d'Anima vient en plus. */
+export default function Accueil() {
   const c = useColors();
-  const { data, error, refreshing, refresh } = useLoad(useCallback(() => listMyJournals(userId), [userId]));
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string>();
+  const router = useRouter();
+  const userId = useUserId();
+  const { data, error, refreshing, refresh } = useLoad(useCallback(() => loadHome(userId), [userId]));
 
-  async function openIntime() {
-    setCreating(true);
-    setCreateError(undefined);
-    try {
-      const id = await createIntimeJournal(userId);
-      router.push({ pathname: '/journal/[id]', params: { id } });
-    } catch {
-      setCreateError('Le journal intime n’a pas pu être créé. Réessaie.');
-    } finally {
-      setCreating(false);
-    }
-  }
+  const header = (
+    <Stack.Screen
+      options={{
+        headerRight: () => (
+          <Link href="/compte" asChild>
+            <Pressable accessibilityRole="button" hitSlop={12}>
+              <Text style={{ fontFamily: fonts.texteMoyen, color: c.texte }}>Compte</Text>
+            </Pressable>
+          </Link>
+        ),
+      }}
+    />
+  );
+  if (!data && !error)
+    return (
+      <>
+        {header}
+        <Loading />
+      </>
+    );
+
+  const today = dayBounds().day;
+  const due = data?.queue.length ?? 0;
+  const exam = data ? nextExam(data.decks, today) : null;
+  const hour = new Date().getHours();
+  const groups = new Map<string, DeckRow[]>();
+  for (const d of data?.decks ?? []) groups.set(d.subject ?? '', [...(groups.get(d.subject ?? '') ?? []), d]);
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Link href="/compte" asChild>
-              <Pressable accessibilityRole="button" hitSlop={12}>
-                <Text style={{ fontFamily: fonts.texteMoyen, color: c.texte }}>Compte</Text>
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-      {!data && !error ? (
-        <Loading />
-      ) : (
-        <ScrollView
-          style={{ backgroundColor: c.fond }}
-          contentContainerStyle={{ padding: 20, gap: 28, maxWidth: 640, width: '100%', alignSelf: 'center' }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
-          <View style={{ gap: 6 }}>
-            <Title size={40}>
-              Bonjour{data?.me?.display_name ? ', ' : ''}
-              {data?.me?.display_name ? <Text style={{ fontFamily: fonts.titreItalique, color: c.champagne }}>{data.me.display_name}</Text> : null}
+      {header}
+      <ScrollView
+        style={{ backgroundColor: c.fond }}
+        contentContainerStyle={{ padding: 20, gap: 24, maxWidth: 640, width: '100%', alignSelf: 'center' }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+        <View style={{ gap: 6 }}>
+          <Title size={40}>
+            {hour >= 18 || hour < 5 ? 'Bonsoir' : 'Bonjour'}
+            {data?.name ? ' ' : ''}
+            {data?.name ? <Text style={{ fontFamily: fonts.titreItalique, color: c.champagne }}>{data.name}</Text> : null}
+          </Title>
+        </View>
+        <ErrorText>{error}</ErrorText>
+
+        {data && data.decks.length === 0 ? (
+          <Card style={{ gap: 14, backgroundColor: '#141415', borderColor: 'rgba(230,200,145,0.25)' }}>
+            <Overline>Premier pas</Overline>
+            <Title size={32}>
+              Quelle matière <Text style={{ fontFamily: fonts.titreItalique, color: c.champagne }}>tu révises ?</Text>
             </Title>
-            <Body soft>Qu’est-ce qui a compté aujourd’hui ?</Body>
-          </View>
-          <ErrorText>{error}</ErrorText>
-
-          <View style={{ gap: 12 }}>
-            <Overline>Pour toi seul</Overline>
-            {data?.intime ? (
-              <JournalRow journal={data.intime} />
-            ) : (
-              <Card style={{ gap: 12 }}>
-                <Body>Ton journal intime n’est visible que par toi. Personne d’autre ne peut le lire, jamais.</Body>
-                <ErrorText>{createError}</ErrorText>
-                <Button label="Ouvrir mon journal intime" onPress={openIntime} busy={creating} />
-              </Card>
-            )}
-          </View>
-
-          <View style={{ gap: 12 }}>
-            <Overline>Journaux partagés</Overline>
-            {data?.shared.length ? (
-              data.shared.map((j) => <JournalRow key={j.id} journal={j} />)
-            ) : (
-              <Body soft>Aucun journal partagé pour l’instant. Crée-en un pour ta famille, tes amis ou ton couple, ou rejoins-en un avec un code.</Body>
-            )}
-            <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-              <Button label="Nouveau journal" onPress={() => router.push('/nouveau')} />
-              <Button label="J’ai un code" ghost onPress={() => router.push('/rejoindre')} />
+            <Body soft>Crée ton premier paquet, ou ajoute celui de ta promo avec un code. Chaque réponse règle la prochaine révision.</Body>
+            <Button label="Créer mon premier paquet" onPress={() => router.push('/flashcards/nouveau')} />
+            <Button label="J’ai un code de ma promo" ghost onPress={() => router.push('/flashcards/code')} />
+            <Text style={{ fontFamily: fonts.texte, fontSize: 12, lineHeight: 18, color: c.doux }}>
+              Pour transformer un cours ou un PDF en cartes, ouvre anima sur le site : les cartes arrivent ici.
+            </Text>
+          </Card>
+        ) : (
+          <Card style={{ gap: 14, backgroundColor: '#141415', borderColor: 'rgba(230,200,145,0.25)' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <Overline>Aujourd’hui</Overline>
+              {exam ? (
+                <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: fonts.texteMoyen, fontSize: 12, color: c.champagne }}>
+                  {exam.days === 0 ? 'Jour J' : `J-${exam.days}`} · {exam.title}
+                </Text>
+              ) : null}
             </View>
+            <Title size={38}>
+              {due ? `${due} carte${due > 1 ? 's' : ''} ` : 'Tout est révisé'}
+              {due ? <Text style={{ fontFamily: fonts.titreItalique, color: c.champagne }}>à revoir</Text> : null}
+            </Title>
+            <Body soft>
+              {due ? `environ ${Math.max(1, Math.round((due * 8) / 60))} min · ` : ''}
+              {data?.doneToday ?? 0} / {data?.goal} réponses aujourd’hui{data && data.streak > 1 ? ` · ${data.streak} jours d’affilée` : ''}
+            </Body>
+            {due > 0 && <Button label="Commencer la révision" onPress={() => router.push('/flashcards/reviser')} />}
+          </Card>
+        )}
+
+        {data && data.decks.length > 0 && (
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Button label="Nouveau paquet" ghost onPress={() => router.push('/flashcards/nouveau')} style={{ flex: 1, paddingHorizontal: 12 }} />
+            <Button label="Avec un code" ghost onPress={() => router.push('/flashcards/code')} style={{ flex: 1, paddingHorizontal: 12 }} />
           </View>
-        </ScrollView>
-      )}
+        )}
+
+        {[...groups.entries()].map(([subject, decks]) => (
+          <View key={subject || 'sans'} style={{ gap: 12 }}>
+            <Overline>{subject || 'Sans matière'}</Overline>
+            {decks.map((d) => (
+              <DeckLink key={d.id} d={d} today={today} />
+            ))}
+          </View>
+        ))}
+
+        <View style={{ gap: 12 }}>
+          <Overline>Aussi dans Anima</Overline>
+          <Link href="/journaux" asChild>
+            <Pressable accessibilityRole="link" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Title size={22}>Journaux</Title>
+                  <Text style={{ fontFamily: fonts.texte, fontSize: 13, color: c.doux }}>Ton journal intime et vos journaux partagés</Text>
+                </View>
+                <Text style={{ fontFamily: fonts.texteMoyen, color: c.champagne }}>Ouvrir</Text>
+              </Card>
+            </Pressable>
+          </Link>
+          <Text style={{ fontFamily: fonts.texte, fontSize: 12, lineHeight: 18, color: c.doux }}>
+            Notes de cours, Organiser, Cercles, Bibliothèque et Fichiers sont sur anima, le site.
+          </Text>
+        </View>
+      </ScrollView>
     </>
   );
 }
 
-function JournalRow({ journal }: { journal: JournalCard }) {
+function DeckLink({ d, today }: { d: DeckRow; today: string }) {
   const c = useColors();
-  const names = journal.members.map((m) => m.display_name).filter(Boolean);
+  const exam = d.exam_date ? daysUntil(d.exam_date, today) : null;
   return (
-    <Link href={{ pathname: '/journal/[id]', params: { id: journal.id } }} asChild>
+    <Link href={{ pathname: '/flashcards/paquet', params: { id: d.id } }} asChild>
       <Pressable accessibilityRole="link" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
         <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <Cover id={journal.cover} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Title size={24} numberOfLines={1}>
-              {journal.title}
+          <View style={{ width: 36, height: 48, borderRadius: 6, backgroundColor: coverOf(d.cover).bg }} />
+          <View style={{ flex: 1, gap: 3 }}>
+            <Title size={22} numberOfLines={1}>
+              {d.title}
             </Title>
-            <Text style={{ fontFamily: fonts.texte, fontSize: 13, color: c.doux }} numberOfLines={1}>
-              {journal.kind === 'intime' ? 'Privé' : `${JOURNAL_KIND_LABELS[journal.kind]} · ${names.join(', ')}`}
+            <Text style={{ fontFamily: fonts.texte, fontSize: 13, color: c.doux }}>
+              {d.total} carte{d.total > 1 ? 's' : ''} · {d.fresh} nouvelle{d.fresh > 1 ? 's' : ''}
+              {d.share_code ? ' · partagé' : d.source_deck_id ? ' · de ta promo' : ''}
             </Text>
+            {exam != null && exam >= 0 ? (
+              <Text style={{ fontFamily: fonts.texteMoyen, fontSize: 12, color: c.champagne }}>Examen {examLabel(exam)}</Text>
+            ) : null}
           </View>
+          {d.due > 0 ? <Text style={{ fontFamily: fonts.texteGras, fontSize: 15, color: c.champagne }}>{d.due}</Text> : null}
         </Card>
       </Pressable>
     </Link>

@@ -69,6 +69,14 @@ async function NoteView({ params }: PageProps<"/notes/[id]">) {
           </p>
         </div>
 
+        <Link
+          href={`/flashcards/generer?note=${note.id}`}
+          className="rounded-xl bg-papier border border-champagne/25 px-4 py-3 flex flex-col hover:border-champagne/50 transition-colors"
+        >
+          <span className="text-sm font-medium">Faire des flashcards</span>
+          <span className="text-xs text-doux">Tirer des cartes de révision de cette page</span>
+        </Link>
+
         <section className="flex flex-col gap-2.5">
           <h3 className="surtitre">Né de cette page</h3>
           {tasks.map((t) => (

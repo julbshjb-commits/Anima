@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 
-export const AI_SPACES = ["organiser", "notes", "bibliotheque", "journaux", "cercles", "fichiers", "intime"] as const;
+export const AI_SPACES = ["organiser", "notes", "bibliotheque", "journaux", "cercles", "fichiers", "flashcards", "intime"] as const;
 export type AiSpace = (typeof AI_SPACES)[number];
 
 export const AI_SPACE_META: Record<AiSpace, { label: string; detail: string }> = {
@@ -15,6 +15,7 @@ export const AI_SPACE_META: Record<AiSpace, { label: string; detail: string }> =
   journaux: { label: "Journaux partagés", detail: "Les journaux que tu partages, et les entrées de chacun." },
   cercles: { label: "Cercles", detail: "Les publications de tes cercles, écrites aussi par d'autres." },
   fichiers: { label: "Fichiers", detail: "Ton disque : noms des fichiers et dossiers." },
+  flashcards: { label: "Flashcards", detail: "Tes paquets et tes cartes. L'assistant peut proposer des cartes, que tu relis avant de les garder." },
   intime: { label: "Journal intime", detail: "Ton journal le plus personnel. À n'ouvrir que si tu le veux vraiment." },
 };
 

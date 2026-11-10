@@ -3,6 +3,7 @@
  * Partagés par le web et le mobile. À régénérer un jour avec `supabase gen types typescript`.
  */
 import type { JournalKind, JournalRole, Mood } from "./journaux";
+import type { CardKind, CardState } from "./flashcards";
 
 type Timestamp = string;
 
@@ -244,6 +245,25 @@ export type FileRow = {
 
 export type AiAccess = { user_id: string; spaces: string[]; updated_at: Timestamp };
 
+export type Deck = {
+  id: string;
+  owner_id: string;
+  title: string;
+  subject: string | null;
+  description: string | null;
+  cover: string;
+  notebook_id: string | null;
+  project_id: string | null;
+  /** Code à 8 caractères quand le paquet est partagé avec la promo. */
+  share_code: string | null;
+  /** Paquet d'origine quand c'est une copie ajoutée avec un code. */
+  source_deck_id: string | null;
+  /** Date de l'examen, pour le compte à rebours. */
+  exam_date: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
 export type PublicProfile = {
   id: string;
   handle: string;
@@ -257,6 +277,72 @@ export type PublicProfile = {
   following_count: number;
   posts_count: number;
   created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type DeckPreview = {
+  title: string;
+  subject: string | null;
+  description: string | null;
+  cover: string;
+  author: string;
+  cards: number;
+  sample: { kind: CardKind; front: string; back: string }[];
+  mine: boolean;
+  /** La personne a déjà sa copie de ce paquet. */
+  copied: boolean;
+};
+
+export type Card = {
+  id: string;
+  owner_id: string;
+  deck_id: string;
+  kind: CardKind;
+  front: string;
+  back: string;
+  tags: string[];
+  note_id: string | null;
+  origin_card_id: string | null;
+  source: "manuel" | "ia" | "auto";
+  status: "active" | "a-verifier";
+  suspended: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type CardSchedule = {
+  id: string;
+  owner_id: string;
+  card_id: string;
+  variant: number;
+  state: CardState;
+  step: number;
+  due_at: Timestamp;
+  interval_days: number;
+  ease: number;
+  reps: number;
+  lapses: number;
+  last_reviewed_at: Timestamp | null;
+};
+
+export type CardReview = {
+  id: string;
+  owner_id: string;
+  schedule_id: string | null;
+  deck_id: string | null;
+  rating: number;
+  state_before: CardState;
+  interval_before: number;
+  interval_after: number;
+  duration_ms: number | null;
+  reviewed_at: Timestamp;
+};
+
+export type FlashcardSettings = {
+  owner_id: string;
+  new_per_day: number;
+  reviews_per_day: number;
+  daily_goal: number;
   updated_at: Timestamp;
 };
 
@@ -376,6 +462,12 @@ export type Database = {
       files: Table<FileRow, { name: string; storage_path: string; folder_id?: string | null; starred?: boolean; note_id?: string | null; trashed_at?: string | null }>;
       reading_goals: Table<ReadingGoal, { year: number; target: number }>;
       notebook_invites: Table<{ id: string; notebook_id: string; expires_at: Timestamp; revoked_at: Timestamp | null }, never>;
+      decks: Table<Deck, { title: string; subject?: string | null; description?: string | null; cover?: string; notebook_id?: string | null; project_id?: string | null; exam_date?: string | null }>;
+      cards: Table<Card, { deck_id: string; front: string; kind?: CardKind; back?: string; tags?: string[]; note_id?: string | null; source?: Card["source"]; status?: Card["status"]; suspended?: boolean }>;
+      /** Les lignes sont créées par la base quand une carte est ajoutée. */
+      card_schedules: Table<CardSchedule, never, Partial<Omit<CardSchedule, "id" | "owner_id" | "card_id" | "variant">>>;
+      card_reviews: Table<CardReview, { schedule_id: string | null; deck_id: string | null; rating: number; state_before: CardState; interval_before?: number; interval_after?: number; duration_ms?: number | null; reviewed_at?: string }>;
+      flashcard_settings: Table<FlashcardSettings, { new_per_day?: number; reviews_per_day?: number; daily_goal?: number; updated_at?: string }>;
       public_profiles: Table<PublicProfile, { id: string; handle: string; name: string; bio?: string; avatar_path?: string | null; is_private?: boolean }>;
       posts: Table<PublicPost, { body?: string; mood?: Mood | null; photo_path?: string | null; source?: PublicPost["source"]; quote_by?: string | null }>;
       follows: Table<Follow, { followee_id: string; status?: "accepted" | "pending" }>;
@@ -402,6 +494,11 @@ export type Database = {
       toggle_question: { Args: { p_block_id: string }; Returns: undefined };
       storage_used_bytes: { Args: Record<string, never>; Returns: number };
       file_quota_bytes: { Args: Record<string, never>; Returns: number };
+      deck_share: { Args: { p_deck_id: string; p_on: boolean }; Returns: string | null };
+      deck_preview: { Args: { p_code: string }; Returns: DeckPreview | null };
+      deck_import: { Args: { p_code: string }; Returns: string | null };
+      deck_updates: { Args: { p_deck_id: string }; Returns: number };
+      deck_pull: { Args: { p_deck_id: string }; Returns: number };
       handle_available: { Args: { p_handle: string }; Returns: boolean };
       moderate: { Args: { p_kind: "post" | "comment" | "profile"; p_target: string; p_action: "retire" | "garde" | "suspendu" }; Returns: undefined };
       mark_notifications_read: { Args: Record<string, never>; Returns: undefined };

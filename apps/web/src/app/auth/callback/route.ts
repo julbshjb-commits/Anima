@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const suite = searchParams.get("suite");
   // Uniquement une page d'Anima : « /\\site.com » serait lu comme une autre adresse.
   const dest = suite && suite.startsWith("/") ? new URL(suite, origin) : null;
-  const next = dest && dest.origin === origin ? dest.pathname + dest.search : "/aujourdhui";
+  const next = dest && dest.origin === origin ? dest.pathname + dest.search : "/flashcards";
 
   if (code) {
     const supabase = await createClient();

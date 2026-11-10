@@ -26,7 +26,7 @@ export function NotesSidebar({
     <aside className="lg:w-[260px] shrink-0 px-5 py-5 lg:py-7 border-b lg:border-b-0 lg:border-r border-trait flex flex-col gap-6 lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto">
       <div className="flex items-center gap-2.5">
         <Link
-          href="/aujourdhui"
+          href="/flashcards"
           aria-label="Retour à l'accueil"
           className="w-9 h-9 shrink-0 rounded-full border border-noir/12 grid place-items-center hover:bg-lin"
         >

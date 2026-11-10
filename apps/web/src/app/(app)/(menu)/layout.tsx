@@ -15,7 +15,7 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
         aria-label="Navigation principale"
         className="hidden lg:flex w-[264px] shrink-0 sticky top-0 h-dvh flex-col gap-7 px-5 py-7 border-r border-trait"
       >
-        <Link href="/aujourdhui" className="titre italic text-[34px] leading-none px-3 champagne self-start">
+        <Link href="/flashcards" className="titre italic text-[34px] leading-none px-3 champagne self-start">
           anima
         </Link>
         <Suspense fallback={<div className="h-[500px]" />}>
@@ -32,7 +32,7 @@ export default function MenuLayout({ children }: LayoutProps<"/">) {
       </nav>
 
       <header className="lg:hidden sticky top-0 z-10 h-14 px-3 sm:px-4 flex items-center gap-0.5 sm:gap-1 border-b border-trait bg-fond/90">
-        <Link href="/aujourdhui" className="titre italic text-[26px] mr-auto champagne pr-1">
+        <Link href="/flashcards" className="titre italic text-[26px] mr-auto champagne pr-1">
           anima
         </Link>
         <Suspense fallback={<span className="w-9 h-9 sm:w-10 sm:h-10" />}>

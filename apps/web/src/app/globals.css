@@ -207,6 +207,56 @@ main > *:nth-child(n + 5) { animation-delay: 0.24s; }
 .flamme { animation: danse 1.4s ease-in-out infinite; transform-origin: 50% 90%; }
 .pouls { animation: pouls 2s ease-in-out infinite; }
 
+/* Flashcards : entrée en cascade, reflet sur l'or, jauges et anneau qui se remplissent. */
+@keyframes balaye { 0% { background-position: -160% 0; } 60%, 100% { background-position: 260% 0; } }
+@keyframes jauge { from { transform: scaleX(0); } }
+@keyframes dessine { from { stroke-dasharray: 0 999; } }
+@keyframes compte { from { opacity: 0; transform: translateY(0.3em); filter: blur(6px); } }
+.entree { animation: monte 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; animation-delay: calc(var(--i, 0) * 90ms); }
+.bouton-or {
+  background: linear-gradient(110deg, #d9b373 0%, #f3dcb0 45%, #fff3d6 50%, #f3dcb0 55%, #d9b373 100%);
+  background-size: 220% 100%;
+  animation: balaye 4.5s ease-in-out infinite;
+}
+.jauge { transform-origin: left; animation: jauge 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.5s backwards; }
+.anneau-dessin { animation: dessine 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s backwards; }
+.chiffre-or {
+  background: linear-gradient(180deg, #fff7e6, #e6c891);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+  animation: compte 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s backwards;
+}
+.souleve { transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.35s; }
+.souleve:hover { transform: translateY(-4px); border-color: rgb(230 200 145 / 0.35); }
+
+/* Séance de révision : lueurs qui dérivent, carte qui arrive puis flotte, éclat à chaque réponse. */
+@keyframes derive { 50% { transform: translate(70px, -40px) scale(1.15); } }
+@keyframes derive-2 { 50% { transform: translate(-60px, 30px) scale(0.92); } }
+@keyframes berce { 50% { transform: translateY(-6px); } }
+@keyframes arrive { from { opacity: 0; transform: translateY(30px) scale(0.96); } }
+@keyframes eclat { from { opacity: 0.9; transform: scale(0.4); } to { opacity: 0; transform: scale(2.2); } }
+.lueur { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+.lueur-1 { animation: derive 14s ease-in-out infinite; }
+.lueur-2 { animation: derive-2 18s ease-in-out infinite; }
+.berce { animation: berce 5s ease-in-out infinite; }
+.arrive { animation: arrive 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+.eclat {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 240px;
+  height: 240px;
+  margin: -120px 0 0 -120px;
+  border-radius: 50%;
+  border: 2px solid rgb(230 200 145 / 0.6);
+  animation: eclat 0.8s ease-out both;
+  pointer-events: none;
+}
+.choix { transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease; }
+.choix:hover { transform: translateY(-3px); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;

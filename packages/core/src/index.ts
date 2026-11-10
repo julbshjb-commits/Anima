@@ -10,4 +10,5 @@ export * from "./cercles";
 export * from "./bibliotheque";
 export * from "./fichiers";
 export * from "./ia";
+export * from "./flashcards";
 export * from "./reseau";

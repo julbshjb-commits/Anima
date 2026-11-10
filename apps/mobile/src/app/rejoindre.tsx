@@ -1,3 +1,4 @@
+import { isValidDeckCode, normalizeInviteCode } from '@anima/core';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -11,6 +12,8 @@ export default function Rejoindre() {
   const [busy, setBusy] = useState(false);
 
   async function join() {
+    // 8 caractères : un paquet de flashcards partagé, qu'on regarde avant de l'ajouter.
+    if (isValidDeckCode(code)) return router.replace({ pathname: '/flashcards/code', params: { code: normalizeInviteCode(code) } });
     setBusy(true);
     setError(undefined);
     try {
@@ -26,7 +29,7 @@ export default function Rejoindre() {
   return (
     <Screen>
       <Title>Rejoindre un journal</Title>
-      <Body soft>Entre le code que l’on t’a envoyé.</Body>
+      <Body soft>Entre le code que l’on t’a envoyé : un journal partagé, ou un paquet de flashcards de ta promo.</Body>
       <Field
         label="Code d’invitation"
         value={code}
@@ -34,7 +37,7 @@ export default function Rejoindre() {
         autoCapitalize="characters"
         autoCorrect={false}
         placeholder="K7M-Q2P"
-        maxLength={8}
+        maxLength={10}
         autoFocus
         onSubmitEditing={join}
         style={{ fontSize: 22, letterSpacing: 4 }}

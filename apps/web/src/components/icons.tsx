@@ -166,6 +166,13 @@ export const IconGrille = (p: P) => (
     <circle cx="16.5" cy="16.5" r="3" />
   </Svg>
 );
+export const IconCartes = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="7" width="13" height="14" rx="2" />
+    <path d="M8 3h11a2 2 0 0 1 2 2v12" />
+    <path d="M7 12h5M7 15.5h3" />
+  </Svg>
+);
 export const IconBoussole = (p: P) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="9" />
