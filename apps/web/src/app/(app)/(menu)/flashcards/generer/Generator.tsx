@@ -103,6 +103,9 @@ export function Generator({
     setFiles((f) => [{ id: r.id, name: file.name, mime_type: file.type || "application/pdf" }, ...f]);
     setFileId(r.id);
     if (!deckId && !newDeck) setNewDeck(file.name.replace(/\.[a-z0-9]+$/i, ""));
+    if (file.type === "application/pdf") {
+      setMsg("PDF reçu. Sans IA, il faut coller le texte du cours dans « Coller un cours » : les PDF ne se lisent pas encore sans IA.");
+    }
   }
 
   return (
@@ -162,7 +165,11 @@ export function Generator({
             <p className="text-xs text-doux leading-relaxed">
               Reprend les lignes déjà écrites comme des fiches : « Terme : définition », « Question ? Réponse », ou les trous {"{{c1::…}}"}. Sans IA, rien ne quitte Anima.
             </p>
-            {isPdf && <p className="text-[11px] text-doux">Un PDF se lit avec l'IA.</p>}
+            {isPdf && (
+              <p className="text-[11px] text-doux leading-relaxed">
+                Un PDF ne se lit pas encore sans IA. Ouvre-le, copie le texte de ton cours et colle-le dans « Coller un cours ».
+              </p>
+            )}
             <button type="button" disabled={!ready || pending || isPdf} onClick={() => run("auto")} className={`${btnGhost} self-start`}>
               {pending ? "Lecture…" : "Repérer les cartes"}
             </button>
