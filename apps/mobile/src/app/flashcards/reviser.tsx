@@ -20,7 +20,9 @@ const TONES: Record<Rating, { border: string; bg: string; text: string; sub: str
 export default function Reviser() {
   const c = useColors();
   const router = useRouter();
-  const { paquet } = useLocalSearchParams<{ paquet?: string }>();
+  const { paquet, limite } = useLocalSearchParams<{ paquet?: string; limite?: string }>();
+  // Le test du rappel quotidien s'arrête après un nombre fixe de réponses.
+  const max = Number(limite) > 0 ? Number(limite) : 0;
   const [queue, setQueue] = useState<StudyItem[]>();
   const [error, setError] = useState<string>();
   const [revealed, setRevealed] = useState(false);
@@ -32,9 +34,9 @@ export default function Reviser() {
 
   useEffect(() => {
     loadFlashcards(paquet ?? null)
-      .then((d) => setQueue(d.queue))
+      .then((d) => setQueue(max ? d.queue.slice(0, max) : d.queue))
       .catch(() => setError('Les cartes n’ont pas pu être chargées.'));
-  }, [paquet]);
+  }, [paquet, max]);
 
   const item = queue?.[0];
   useEffect(() => {
@@ -55,6 +57,7 @@ export default function Reviser() {
       chain.current = chain.current.then(() => recordReview(item, rating, elapsed).catch(() => setError('Une réponse n’a pas pu être enregistrée.')));
       Animated.timing(pan, { toValue: rating === 1 ? -500 : 500, duration: 220, useNativeDriver: true }).start(() => {
         setQueue((q) => {
+          if (max && done + 1 >= max) return [];
           const rest = (q ?? []).slice(1);
           if (Date.parse(next.due_at) - Date.now() > LEARN_AHEAD_MS) return rest;
           const at = Math.min(rest.length, rating === 1 ? 3 : 6);
@@ -66,7 +69,7 @@ export default function Reviser() {
         pan.setValue(0);
       });
     },
-    [item, flip, pan],
+    [item, flip, pan, done, max],
   );
 
   // Les gestes ne lisent les refs qu'au moment du glissement, jamais pendant le rendu.

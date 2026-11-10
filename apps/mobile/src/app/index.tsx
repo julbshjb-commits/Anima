@@ -1,11 +1,12 @@
 import { coverOf, dayBounds, daysUntil, examLabel, nextExam } from '@anima/core';
 import { Link, Stack, useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { Body, Button, Card, ErrorText, Loading, Overline, Title } from '@/components/ui';
 import { useUserId } from '@/lib/auth';
 import { loadHome, type DeckRow } from '@/lib/flashcards';
+import { choisirRappel, lireRappel, programmerRappel, RAPPEL_CHOIX, RAPPEL_NOMBRE } from '@/lib/rappels';
 import { useLoad } from '@/lib/useLoad';
 import { fonts, useColors } from '@/theme';
 
@@ -95,6 +96,8 @@ export default function Accueil() {
           </Card>
         )}
 
+        {data && data.decks.length > 0 && <RappelCarte />}
+
         {data && data.decks.length > 0 && (
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Button label="Nouveau paquet" ghost onPress={() => router.push('/flashcards/nouveau')} style={{ flex: 1, paddingHorizontal: 12 }} />
@@ -130,6 +133,55 @@ export default function Accueil() {
         </View>
       </ScrollView>
     </>
+  );
+}
+
+/** Choix de l'heure du test de 5 cartes. Enregistré dans les réglages, programmé sur ce téléphone. */
+function RappelCarte() {
+  const c = useColors();
+  const [heure, setHeure] = useState<string | null>();
+  const [message, setMessage] = useState<string>();
+
+  useEffect(() => {
+    lireRappel()
+      .then((h) => {
+        setHeure(h);
+        void programmerRappel(h);
+      })
+      .catch(() => setHeure(null));
+  }, []);
+
+  async function choisir(h: string | null) {
+    setMessage(undefined);
+    try {
+      const ok = await choisirRappel(h);
+      setHeure(h);
+      if (!ok) setMessage('Autorise les notifications d’Anima dans les réglages du téléphone pour recevoir le rappel.');
+    } catch {
+      setMessage('Le rappel n’a pas pu être enregistré.');
+    }
+  }
+
+  return (
+    <Card style={{ gap: 14, backgroundColor: '#141415', borderColor: 'rgba(230,200,145,0.25)' }}>
+      <Overline>Rappel quotidien</Overline>
+      <Body soft>
+        Chaque jour, une notification t’invite à revoir {RAPPEL_NOMBRE} cartes en deux minutes.
+      </Body>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {RAPPEL_CHOIX.map((choix) => (
+          <Button
+            key={choix.label}
+            label={choix.heure === heure ? `${choix.label} ✓` : choix.label}
+            ghost
+            onPress={() => choisir(choix.heure)}
+            style={{ paddingHorizontal: 12 }}
+          />
+        ))}
+      </View>
+      {message ? <ErrorText>{message}</ErrorText> : null}
+      {heure === undefined ? <Text style={{ fontFamily: fonts.texte, fontSize: 12, color: c.doux }}>Chargement…</Text> : null}
+    </Card>
   );
 }
 
