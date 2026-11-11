@@ -415,6 +415,10 @@ export type DraftCard = { kind: CardKind; front: string; back: string };
  * et les phrases qui contiennent déjà des trous {{c1::…}}.
  * C'est une aide mécanique : rien n'est inventé, tout est relu avant d'être gardé.
  */
+/** Dates, jours, heures : de la logistique, pas une notion à apprendre. */
+const LOGISTIQUE =
+  /\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)\b|\b\d{1,2}\s?h\b|\b\d{1,2}:\d{2}\b/i;
+
 export function extractDraftCards(text: string): DraftCard[] {
   const out: DraftCard[] = [];
   const seen = new Set<string>();
@@ -436,8 +440,16 @@ export function extractDraftCards(text: string): DraftCard[] {
       push({ kind: "basique", front: q[1]!.trim(), back: q[2]!.trim() });
       continue;
     }
-    const d = line.match(/^(.{1,80}?)\s*(?:\s:\s|:\s|\s[—–-]\s|\s=\s)\s*(.{2,600})$/);
-    if (d && !/^https?$/i.test(d[1]!.trim()) && d[1]!.split(/\s+/).length <= 8) {
+    // Une définition a un petit terme et une vraie phrase en réponse. Les titres de diapositives
+    // (« Partiels : mardi 16 décembre ») et les puces logistiques ne deviennent pas des cartes.
+    const d = line.match(/^(.{1,80}?)\s*(?:\s:\s|:\s|\s[—–]\s|\s=\s)\s*(.{2,600})$/);
+    if (
+      d &&
+      !/^https?$/i.test(d[1]!.trim()) &&
+      d[1]!.split(/\s+/).length <= 4 &&
+      d[2]!.split(/\s+/).length >= 4 &&
+      !LOGISTIQUE.test(d[2]!)
+    ) {
       push({ kind: "basique", front: d[1]!.trim(), back: d[2]!.trim() });
     }
   }
