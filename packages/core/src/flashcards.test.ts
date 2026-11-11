@@ -101,6 +101,17 @@ describe("tirer des cartes d'une note", () => {
   });
 });
 
+describe("repérage : pas de logistique ni de titres de diapositives", () => {
+  it("ignore les titres et les dates, garde les vraies définitions", () => {
+    const cards = extractDraftCards(
+      "Partiels de fin de semestre : mardi 16 décembre\nCours 9 : la respiration cellulaire\nMitose : division cellulaire qui produit deux cellules filles identiques\n",
+    );
+    expect(cards).toEqual([
+      { kind: "basique", front: "Mitose", back: "division cellulaire qui produit deux cellules filles identiques" },
+    ]);
+  });
+});
+
 describe("journée et progrès", () => {
   it("borne la journée à Paris", () => {
     const b = dayBounds(new Date("2026-11-06T23:30:00Z"));
