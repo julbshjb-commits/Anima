@@ -9,6 +9,7 @@ import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 
 import { Body, Screen, Title } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -17,6 +18,9 @@ import { supabase } from '@/lib/supabase';
 import { fonts, useColors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+/** Les notifications n'existent pas dans l'aperçu web : là, il n'y a jamais de tap à traiter. */
+const useReponseRappel = Platform.OS === 'web' ? () => undefined : Notifications.useLastNotificationResponse;
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -34,7 +38,7 @@ function Navigation() {
   const c = useColors();
   const router = useRouter();
   // Un tap sur le rappel ouvre directement le test de 5 cartes (une seule fois par notification).
-  const reponse = Notifications.useLastNotificationResponse();
+  const reponse = useReponseRappel();
   const traite = useRef<string>(undefined);
 
   useEffect(() => {
@@ -78,6 +82,14 @@ function Navigation() {
           <Stack.Screen name="flashcards/nouveau" options={{ title: 'Nouveau paquet', presentation: 'modal' }} />
           <Stack.Screen name="flashcards/code" options={{ title: 'Paquet partagé', presentation: 'modal' }} />
           <Stack.Screen name="flashcards/reviser" options={{ title: 'Révision', presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="decouvrir/index" options={{ title: 'Découvrir' }} />
+          <Stack.Screen name="decouvrir/profil" options={{ title: 'Mon profil public', presentation: 'modal' }} />
+          <Stack.Screen name="decouvrir/publier" options={{ title: 'Publier', presentation: 'modal' }} />
+          <Stack.Screen name="decouvrir/recherche" options={{ title: 'Chercher' }} />
+          <Stack.Screen name="decouvrir/notifications" options={{ title: 'Notifications' }} />
+          <Stack.Screen name="u/[handle]" options={{ title: '' }} />
+          <Stack.Screen name="p/[id]" options={{ title: 'Publication' }} />
+          <Stack.Screen name="signaler" options={{ title: 'Signaler', presentation: 'modal' }} />
           <Stack.Screen name="journal/[id]/index" options={{ title: '' }} />
           <Stack.Screen name="journal/[id]/ecrire" options={{ title: 'Écrire', presentation: 'modal' }} />
           <Stack.Screen name="journal/[id]/inviter" options={{ title: 'Inviter', presentation: 'modal' }} />

@@ -166,6 +166,16 @@ export default function JournalScreen() {
                     ))}
                   </View>
                 ) : null}
+                {!isIntime && e.author_id === userId ? (
+                  <Pressable
+                    accessibilityRole="link"
+                    accessibilityLabel="Publier cette page sur le réseau Anima"
+                    hitSlop={10}
+                    onPress={() => router.push({ pathname: '/decouvrir/publier', params: { journal: id, entree: e.id } })}
+                    style={{ alignSelf: 'flex-start' }}>
+                    <Text style={{ fontFamily: fonts.texteMoyen, fontSize: 13, color: c.champagne }}>Publier sur le réseau</Text>
+                  </Pressable>
+                ) : null}
               </Card>
             ))
           ) : (

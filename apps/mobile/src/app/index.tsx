@@ -116,6 +116,17 @@ export default function Accueil() {
 
         <View style={{ gap: 12 }}>
           <Overline>Aussi dans Anima</Overline>
+          <Link href="/decouvrir" asChild>
+            <Pressable accessibilityRole="link" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: 'rgba(230,200,145,0.25)' }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Title size={22}>Découvrir</Title>
+                  <Text style={{ fontFamily: fonts.texte, fontSize: 13, color: c.doux }}>Le réseau Anima : pensées, citations et photos du monde entier</Text>
+                </View>
+                <Text style={{ fontFamily: fonts.texteMoyen, color: c.champagne }}>Ouvrir</Text>
+              </Card>
+            </Pressable>
+          </Link>
           <Link href="/journaux" asChild>
             <Pressable accessibilityRole="link" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
               <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
