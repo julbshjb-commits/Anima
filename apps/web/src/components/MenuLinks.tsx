@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { IconBibliotheque, IconBoussole, IconCartes, IconCercles, IconCle, IconCloche, IconCoche, IconDossier, IconJournaux, IconNotes, IconReglages, IconSoleil } from "./icons";
 
 const LINKS = [
@@ -22,6 +23,21 @@ const MORE = LINKS.slice(2);
 /** Lien à part : il porte le compteur de notifications non lues. */
 const NOTIF = { href: "/notifications", label: "Notifications", Icon: IconCloche, match: (p: string) => p.startsWith("/notifications") } as const;
 
+/**
+ * L'onglet touché s'allume tout de suite, sans attendre que la page arrive :
+ * le retour est immédiat, même quand le serveur prend une seconde.
+ */
+function useCible() {
+  const path = usePathname();
+  const [cible, setCible] = useState<{ href: string; from: string } | null>(null);
+  const attente = cible && cible.from === path ? cible.href : null;
+  const allume = (href: string, match: (p: string) => boolean) => (attente ? attente === href : match(path));
+  const vise = (href: string, match: (p: string) => boolean) => () => {
+    if (!match(path)) setCible({ href, from: path });
+  };
+  return { allume, vise, attente };
+}
+
 const item = "relative flex items-center gap-3 h-11 px-3 rounded-2xl text-sm transition-[background-color,transform] duration-200 active:scale-[.97]";
 const active = "bg-papier text-noir font-medium";
 const idle = "text-encre hover:bg-lin hover:translate-x-0.5";
@@ -29,21 +45,22 @@ const idle = "text-encre hover:bg-lin hover:translate-x-0.5";
 /** Liens de la barre latérale : seules les rubriques qui existent vraiment. */
 export function MenuLinks({ unread = 0 }: { unread?: number }) {
   const path = usePathname();
+  const { allume, vise } = useCible();
   const row = ({ href, label, Icon, match }: (typeof LINKS)[number]) => (
-    <Link key={href} href={href} aria-current={match(path) ? "page" : undefined} className={`${item} ${match(path) ? active : idle}`}>
+    <Link key={href} href={href} onClick={vise(href, match)} aria-current={match(path) ? "page" : undefined} className={`${item} ${allume(href, match) ? active : idle}`}>
       <Icon />
       {label}
-      {match(path) && <span aria-hidden className="ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />}
+      {allume(href, match) && <span aria-hidden className="pastille ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />}
     </Link>
   );
   const notifRow = ({ href, label, Icon, match }: typeof NOTIF) => (
-    <Link key={href} href={href} aria-current={match(path) ? "page" : undefined} className={`${item} ${match(path) ? active : idle}`}>
+    <Link key={href} href={href} onClick={vise(href, match)} aria-current={match(path) ? "page" : undefined} className={`${item} ${allume(href, match) ? active : idle}`}>
       <Icon />
       {label}
       {unread > 0 ? (
         <span className="ml-auto min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-champagne text-nuit text-[11px] font-semibold tabular-nums">{unread > 99 ? "99+" : unread}</span>
       ) : (
-        match(path) && <span aria-hidden className="ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />
+        allume(href, match) && <span aria-hidden className="pastille ml-auto w-1.5 h-1.5 rounded-full bg-champagne shadow-[0_0_10px_rgba(230,200,145,.8)]" />
       )}
     </Link>
   );
@@ -62,6 +79,7 @@ const TABS = [LINKS[0], LINKS[1], LINKS[2], LINKS[4], LINKS[5]] as const;
 /** Barre d'onglets flottante (téléphone et iPad en portrait). */
 export function TabBar() {
   const path = usePathname();
+  const { allume, vise, attente } = useCible();
   return (
     <nav
       aria-label="Rubriques"
@@ -70,15 +88,16 @@ export function TabBar() {
       {TABS.map((l) => {
         const { href, Icon, match } = l;
         const label = "tab" in l ? l.tab : l.label;
-        const on = match(path);
+        const on = allume(href, match);
         return (
           <Link
             key={href}
             href={href}
-            aria-current={on ? "page" : undefined}
+            onClick={vise(href, match)}
+            aria-current={match(path) ? "page" : undefined}
             className={`relative h-full flex flex-col items-center justify-center gap-1 text-[10.5px] md:text-xs transition-transform active:scale-90 ${on ? "text-noir font-medium" : "text-doux"}`}
           >
-            <span className={`grid place-items-center w-10 h-8 rounded-full transition-colors ${on ? "bg-[linear-gradient(180deg,#f0d8a8,#d4ad6c)] text-nuit" : ""}`}>
+            <span className={`grid place-items-center w-10 h-8 rounded-full transition-colors ${on ? "pastille bg-[linear-gradient(180deg,#f0d8a8,#d4ad6c)] text-nuit" : ""} ${attente === href ? "attente" : ""}`}>
               <Icon />
             </span>
             {label}
