@@ -7,13 +7,14 @@ import { LeaveNetworkForm, ProfileForm } from "@/components/social/Client";
 import { ProfilePic } from "@/components/social/ProfilePic";
 import { card } from "@/components/ui";
 import { unblock } from "../actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Mon profil public" };
 
 export default function ProfilPage() {
   return (
     <main className="max-w-2xl px-5 py-8 lg:px-12 lg:pt-10 flex flex-col gap-8">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Profil />
       </Suspense>
     </main>

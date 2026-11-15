@@ -7,12 +7,13 @@ import { LegalFooter } from "@/components/LegalPage";
 import { IconPlus } from "@/components/icons";
 import { createNote, deleteNotebook } from "./actions";
 import { NotesSidebar } from "./NotesSidebar";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Notes" };
 
 export default function NotesPage(props: PageProps<"/notes">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine forme="liste" />}>
       <Notes {...props} />
     </Suspense>
   );

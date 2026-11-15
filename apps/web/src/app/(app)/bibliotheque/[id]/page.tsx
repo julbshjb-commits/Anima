@@ -10,12 +10,13 @@ import { IconRetour } from "@/components/icons";
 import { deleteQuote, deleteWork } from "../actions";
 import { BookCover, Stars } from "../BookCover";
 import { EditWork, ProgressForm, QuoteForm } from "../Forms";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Œuvre" };
 
 export default function WorkPage(props: PageProps<"/bibliotheque/[id]">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <WorkView {...props} />
     </Suspense>
   );

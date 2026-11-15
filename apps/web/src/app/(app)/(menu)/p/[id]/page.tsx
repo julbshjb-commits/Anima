@@ -9,12 +9,13 @@ import { ProfilePic } from "@/components/social/ProfilePic";
 import { CommentForm, ContentMenu } from "@/components/social/Client";
 import { IconRetour } from "@/components/icons";
 import { deleteComment } from "../../decouvrir/actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Publication" };
 
 export default function PostPage(props: PageProps<"/p/[id]">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <Post {...props} />
     </Suspense>
   );

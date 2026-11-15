@@ -1,3 +1,4 @@
+import { Apercu } from "@/components/vie/Apercu";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -37,7 +38,7 @@ const TONES = [
 
 export default function CerclesPage(props: PageProps<"/cercles">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <Cercles {...props} />
     </Suspense>
   );

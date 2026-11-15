@@ -7,6 +7,7 @@ import { getAiSpaces } from "@/lib/ia";
 import { AiSpacesPicker } from "@/components/AiSpacesPicker";
 import { AiAccessForm, DeleteForm, NameForm } from "./Forms";
 import { revokeApp, signOut } from "./actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Réglages" };
 
@@ -14,7 +15,7 @@ export default function ComptePage() {
   return (
     <main className="max-w-3xl px-5 py-8 lg:px-12 lg:pt-10 flex flex-col gap-10">
       <div className="flex flex-col gap-1.5"><p className="surtitre">Ton compte</p><h1 className="titre text-[44px] leading-[1.05]">Réglages</h1></div>
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Compte />
       </Suspense>
     </main>

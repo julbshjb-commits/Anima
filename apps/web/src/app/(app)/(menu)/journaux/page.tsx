@@ -9,6 +9,7 @@ import { AvatarStack } from "@/components/Avatar";
 import { IconCadenas, IconPlus } from "@/components/icons";
 import { btn, btnGhost } from "@/components/ui";
 import { createIntimeJournal } from "./actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Journaux" };
 
@@ -22,7 +23,7 @@ type Vue = (typeof VUES)[number]["id"];
 export default function JournauxPage(props: PageProps<"/journaux">) {
   return (
     <main className="px-5 py-8 lg:px-12 lg:pt-10 lg:pb-14 flex flex-col gap-7">
-      <Suspense fallback={<p className="text-doux">Chargement de tes journaux…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Journaux {...props} />
       </Suspense>
     </main>

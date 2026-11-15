@@ -17,12 +17,13 @@ import { IconRetour } from "@/components/icons";
 import { deleteQuote } from "./actions";
 import { BookCover, Stars } from "./BookCover";
 import { AddWork, GoalForm, ProgressForm, QuoteForm } from "./Forms";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Ma bibliothèque" };
 
 export default function BibliothequePage(props: PageProps<"/bibliotheque">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <Bibliotheque {...props} />
     </Suspense>
   );

@@ -13,6 +13,7 @@ import { Avatar } from "@/components/Avatar";
 import { IconCadenas, IconCrayon } from "@/components/icons";
 import { btn, card as surface } from "@/components/ui";
 import { createIntimeJournal } from "../journaux/actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
 
@@ -20,7 +21,7 @@ export const metadata: Metadata = { title: "Aujourd'hui" };
 export default function AujourdhuiPage() {
   return (
     <main className="px-5 py-8 lg:px-12 lg:pt-10 lg:pb-14 flex flex-col gap-6">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Accueil />
       </Suspense>
     </main>

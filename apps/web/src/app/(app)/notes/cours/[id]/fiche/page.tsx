@@ -7,12 +7,13 @@ import { getFiche } from "@/lib/notes";
 import { IconRetour } from "@/components/icons";
 import { PrintButton } from "../Live";
 import { RichText } from "../../../RichText";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Fiche de révision" };
 
 export default function FichePage(props: PageProps<"/notes/cours/[id]/fiche">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <Fiche {...props} />
     </Suspense>
   );

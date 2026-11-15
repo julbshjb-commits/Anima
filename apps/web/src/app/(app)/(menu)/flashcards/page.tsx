@@ -8,13 +8,14 @@ import { requireUser } from "@/lib/auth";
 import { btn, btnGhost, card as surface } from "@/components/ui";
 import { NewDeck, SettingsForm } from "./Forms";
 import { Onboarding } from "./Onboarding";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Flashcards" };
 
 export default function FlashcardsPage() {
   return (
     <main className="px-5 py-8 lg:px-12 lg:pt-10 lg:pb-14 flex flex-col gap-8">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Flashcards />
       </Suspense>
     </main>

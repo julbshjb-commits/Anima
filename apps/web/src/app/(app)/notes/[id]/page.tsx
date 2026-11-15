@@ -9,12 +9,13 @@ import { IconCoche } from "@/components/icons";
 import { deleteNote, toggleNoteTask } from "../actions";
 import { NoteEditor, TaskFromNote } from "../Forms";
 import { NotesSidebar } from "../NotesSidebar";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Note" };
 
 export default function NotePage(props: PageProps<"/notes/[id]">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <NoteView {...props} />
     </Suspense>
   );

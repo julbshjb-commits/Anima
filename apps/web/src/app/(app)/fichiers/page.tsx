@@ -1,3 +1,4 @@
+import { Apercu } from "@/components/vie/Apercu";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -45,7 +46,7 @@ export const metadata: Metadata = { title: "Mes fichiers" };
 
 export default function FichiersPage(props: PageProps<"/fichiers">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <Fichiers {...props} />
     </Suspense>
   );

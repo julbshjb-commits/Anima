@@ -9,12 +9,13 @@ import { Composer } from "@/components/social/Client";
 import { IconLoupe } from "@/components/icons";
 import { btn } from "@/components/ui";
 import { acceptFollower, follow, removeFollower } from "./actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Découvrir" };
 
 export default function DecouvrirPage(props: PageProps<"/decouvrir">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <Decouvrir {...props} />
     </Suspense>
   );
