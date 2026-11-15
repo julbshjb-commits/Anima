@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { IconRetour } from "@/components/icons";
 import { btn, card as surface } from "@/components/ui";
 import { importDeck } from "../actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Ajouter un paquet partagé" };
 
@@ -20,7 +21,7 @@ export default function AddSharedDeck(props: PageProps<"/flashcards/ajouter">) {
         </Link>
         <p className="surtitre">Paquet partagé</p>
       </div>
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Preview {...props} />
       </Suspense>
     </main>

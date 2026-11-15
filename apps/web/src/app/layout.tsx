@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Fraunces, Geist } from "next/font/google";
 import "./globals.css";
 import { Spotlight } from "@/components/Spotlight";
+import { BarreChargement } from "@/components/vie/BarreChargement";
 
 // Direction « Anima vivante » : une serif ronde et douce (axe SOFT) pour les titres,
 // une sans nette pour l'interface.
@@ -34,6 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <i />
         </div>
         <Spotlight />
+        <Suspense fallback={null}>
+          <BarreChargement />
+        </Suspense>
         {children}
       </body>
     </html>

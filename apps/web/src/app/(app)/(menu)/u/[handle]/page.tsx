@@ -10,12 +10,13 @@ import { ContentMenu } from "@/components/social/Client";
 import { IconCadenas, IconRetour } from "@/components/icons";
 import { btn, btnGhost } from "@/components/ui";
 import { follow, unblock, unfollow } from "../../decouvrir/actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Profil" };
 
 export default function UserPage(props: PageProps<"/u/[handle]">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <User {...props} />
     </Suspense>
   );

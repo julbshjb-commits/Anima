@@ -10,13 +10,14 @@ import { btn, btnGhost, card as surface } from "@/components/ui";
 import { AddCard, DeleteDeck, EditDeck, ShareDeck } from "../Forms";
 import { pullDeck } from "../actions";
 import { CardList, ToCheck } from "./CardList";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Paquet" };
 
 export default function DeckPage(props: PageProps<"/flashcards/paquet">) {
   return (
     <main className="px-5 py-8 lg:px-12 lg:pt-10 lg:pb-14 flex flex-col gap-7 max-w-5xl">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Deck {...props} />
       </Suspense>
     </main>

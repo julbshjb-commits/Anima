@@ -10,6 +10,7 @@ import { IconPlus, IconRetour, IconSoleil } from "@/components/icons";
 import { LegalFooter } from "@/components/LegalPage";
 import { archiveProject, archiveRitual, deleteEvent, deleteTask, toggleEvent, toggleRitual, toggleTask } from "./actions";
 import { NewEvent, NewProject, NewRitual, QuickAdd } from "./Forms";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "M'organiser" };
 
@@ -22,7 +23,7 @@ const mondayOf = (day: string) => shift(day, -((parseIsoDate(day).getDay() + 6) 
 
 export default function OrganiserPage(props: PageProps<"/organiser">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine forme="liste" />}>
       <Organiser {...props} />
     </Suspense>
   );

@@ -24,6 +24,7 @@ import {
   TaskFromNote,
 } from "../../Forms";
 import { LiveSeance, PrintButton } from "./Live";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Carnet de cours" };
 
@@ -39,7 +40,7 @@ const TONES = [
 
 export default function CoursPage(props: PageProps<"/notes/cours/[id]">) {
   return (
-    <Suspense fallback={<p className="p-10 text-doux">Chargement…</p>}>
+    <Suspense fallback={<Apercu pleine />}>
       <Cours {...props} />
     </Suspense>
   );

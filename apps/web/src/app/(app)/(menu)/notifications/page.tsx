@@ -5,6 +5,7 @@ import { getNotifications } from "@/lib/reseau";
 import { relativeTime } from "@/lib/format";
 import { ProfilePic } from "@/components/social/ProfilePic";
 import { acceptFollower, follow, markNotificationsRead, removeFollower } from "../decouvrir/actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Notifications" };
 
@@ -29,7 +30,7 @@ export default function NotificationsPage() {
             <button className="text-sm text-doux underline underline-offset-4 hover:text-noir">Tout marquer comme lu</button>
           </form>
         </div>
-        <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+        <Suspense fallback={<Apercu forme="liste" />}>
           <List />
         </Suspense>
       </div>

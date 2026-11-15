@@ -6,13 +6,14 @@ import { getJournal } from "@/lib/data";
 import { card } from "@/components/ui";
 import { InviteForm } from "./InviteForm";
 import { revokeInvite } from "./actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Inviter" };
 
 export default function InviterPage(props: PageProps<"/journaux/[id]/inviter">) {
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Inviter {...props} />
       </Suspense>
     </main>

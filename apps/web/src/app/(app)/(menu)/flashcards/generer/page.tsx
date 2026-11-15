@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { aiCardsAvailable } from "@/lib/ia-cartes";
 import { IconRetour } from "@/components/icons";
 import { Generator } from "./Generator";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Créer des cartes depuis un cours" };
 
@@ -15,7 +16,7 @@ const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]
 export default function GenererPage(props: PageProps<"/flashcards/generer">) {
   return (
     <main className="px-5 py-8 lg:px-12 lg:pt-10 lg:pb-14 flex flex-col gap-7 max-w-5xl">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu />}>
         <Generer {...props} />
       </Suspense>
     </main>

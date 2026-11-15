@@ -5,6 +5,7 @@ import { REPORT_REASONS } from "@anima/core";
 import { getMe, moderationQueue } from "@/lib/reseau";
 import { relativeTime } from "@/lib/format";
 import { moderate } from "../decouvrir/actions";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Modération" };
 
@@ -15,7 +16,7 @@ export default function ModerationPage() {
         <p className="surtitre">Équipe Anima</p>
         <h1 className="titre text-[44px] leading-[1.05]">Modération</h1>
       </div>
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<Apercu forme="liste" />}>
         <Queue />
       </Suspense>
     </main>

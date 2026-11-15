@@ -7,6 +7,7 @@ import { getAiSpaces } from "@/lib/ia";
 import { AiSpacesPicker } from "@/components/AiSpacesPicker";
 import { card } from "@/components/ui";
 import { ConsentForm } from "./ConsentForm";
+import { Apercu } from "@/components/vie/Apercu";
 
 export const metadata: Metadata = { title: "Autoriser une appli" };
 
@@ -21,7 +22,7 @@ export default function ConsentPage({ searchParams }: PageProps<"/oauth/consent"
         <Link href="/flashcards" className="titre text-2xl">
           Anima
         </Link>
-        <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+        <Suspense fallback={<Apercu />}>
           <Consent searchParams={searchParams} />
         </Suspense>
       </div>
