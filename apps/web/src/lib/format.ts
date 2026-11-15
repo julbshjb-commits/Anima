@@ -1,17 +1,18 @@
 /** Petites mises en forme de dates, en français et en heure locale. */
 const short = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
-/** « à l'instant », « il y a 2 h », « hier », « il y a 4 jours », sinon « 12 oct. ». */
+/** Espaces insécables entre le nombre et l'unité : jamais « 5 » en fin de ligne et « h » seul dessous.
+ *  « à l'instant », « il y a 2 h », « hier », « il y a 4 jours », sinon « 12 oct. ». */
 export function relativeTime(iso: string, now = new Date()): string {
   const d = new Date(iso);
   const minutes = Math.round((now.getTime() - d.getTime()) / 60000);
   if (minutes < 2) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 60) return `il y a ${minutes}\u00a0min`;
   const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const days = Math.round((startOf(now) - startOf(d)) / 86400000);
-  if (days === 0) return `il y a ${Math.round(minutes / 60)} h`;
+  if (days === 0) return `il y a ${Math.round(minutes / 60)}\u00a0h`;
   if (days === 1) return "hier";
-  if (days < 7) return `il y a ${days} jours`;
+  if (days < 7) return `il y a ${days}\u00a0jours`;
   return short.format(d);
 }
 

@@ -144,20 +144,20 @@ function JournalTile({ j, me }: { j: JournalCard; me: string }) {
   return (
     <Link href={`/journaux/${j.id}`} className="group flex flex-col gap-3">
       <Cover cover={j.cover} title={j.title} kind={j.kind} className="transition-transform group-hover:-translate-y-0.5" />
-      <span className="flex items-start justify-between gap-2">
-        <span className="flex flex-col gap-0.5 min-w-0">
-          <span className="text-[15px] font-medium line-clamp-2">{j.title}</span>
-          <span className="text-[13px] text-doux line-clamp-2">
-            {JOURNAL_KIND_LABELS[j.kind]} · {activity}
-          </span>
+      <span className="flex flex-col gap-0.5">
+        <span className="flex items-start justify-between gap-2">
+          <span className="text-[15px] font-medium line-clamp-2 min-w-0">{j.title}</span>
+          {others <= 1 ? (
+            <span className="text-xs text-doux shrink-0 pt-0.5">Solo</span>
+          ) : others > 3 ? (
+            <span className="text-xs text-doux shrink-0 pt-0.5">{others} membres</span>
+          ) : (
+            <AvatarStack names={j.members.map((m) => m.display_name)} />
+          )}
         </span>
-        {others <= 1 ? (
-          <span className="text-xs text-doux shrink-0">Solo</span>
-        ) : others > 3 ? (
-          <span className="text-xs text-doux shrink-0">{others} membres</span>
-        ) : (
-          <AvatarStack names={j.members.map((m) => m.display_name)} />
-        )}
+        <span className="text-[13px] text-doux line-clamp-2">
+          {JOURNAL_KIND_LABELS[j.kind]} · {activity}
+        </span>
       </span>
     </Link>
   );
