@@ -38,7 +38,7 @@ function useCible() {
   return { allume, vise, attente };
 }
 
-const item = "relative flex items-center gap-3 h-11 px-3 rounded-2xl text-sm transition-[background-color,transform] duration-200 active:scale-[.97]";
+const item = "relative flex items-center gap-3 h-11 px-3 rounded-2xl text-sm whitespace-nowrap transition-[background-color,transform] duration-200 active:scale-[.97]";
 const active = "bg-papier text-noir font-medium";
 const idle = "text-encre hover:bg-lin hover:translate-x-0.5";
 
@@ -116,5 +116,48 @@ export function SettingsLink() {
       <IconReglages />
       Réglages
     </Link>
+  );
+}
+
+/** Espaces plein écran qui ont leur propre colonne : la barre d'icônes les accompagne. */
+const AVEC_RAIL = ["/organiser", "/notes", "/bibliotheque", "/fichiers"];
+
+/**
+ * Barre d'icônes fine, à gauche des espaces plein écran (ordinateur et iPad
+ * à l'horizontale) : on garde le menu d'Anima sous la main au lieu de devoir
+ * revenir en arrière pour changer d'espace.
+ */
+export function Rail() {
+  const path = usePathname();
+  const { allume, vise } = useCible();
+  if (!AVEC_RAIL.some((p) => path === p || path.startsWith(`${p}/`))) return null;
+  return (
+    <nav
+      aria-label="Espaces d'Anima"
+      className="hidden lg:flex w-16 shrink-0 sticky top-0 h-dvh flex-col items-center gap-1 py-6 border-r border-trait"
+    >
+      <Link href="/flashcards" aria-label="Accueil Anima" className="titre italic text-[28px] leading-none champagne mb-5">
+        a
+      </Link>
+      {[...LINKS, NOTIF].map(({ href, label, Icon, match }) => {
+        const on = allume(href, match);
+        return (
+          <Link
+            key={href}
+            href={href}
+            title={label}
+            aria-label={label}
+            onClick={vise(href, match)}
+            aria-current={match(path) ? "page" : undefined}
+            className={`grid place-items-center w-10 h-10 rounded-2xl transition-[background-color,transform] duration-200 active:scale-90 ${on ? "pastille bg-papier text-noir" : "text-doux hover:bg-lin hover:text-noir"}`}
+          >
+            <Icon />
+          </Link>
+        );
+      })}
+      <Link href="/compte" title="Réglages" aria-label="Réglages" className="mt-auto grid place-items-center w-10 h-10 rounded-2xl text-doux hover:bg-lin hover:text-noir">
+        <IconReglages />
+      </Link>
+    </nav>
   );
 }
