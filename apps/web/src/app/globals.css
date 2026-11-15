@@ -330,3 +330,24 @@ main > *:nth-child(n + 5) { animation-delay: 0.24s; }
   from { transform: scale(0.4); opacity: 1; }
   to { transform: scale(1.8); opacity: 0; }
 }
+
+/* Page d'accueil : sections qui apparaissent au défilement (voir Revele.tsx). */
+.revele { transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), filter 0.9s; }
+.revele[data-revele="attente"] { opacity: 0; transform: translateY(28px); filter: blur(6px); }
+.eclat-carte {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260px;
+  height: 260px;
+  margin: -130px 0 0 -130px;
+  border-radius: 50%;
+  border: 2px solid rgb(230 200 145 / 0.55);
+  animation: eclat-carte 0.8s ease-out both;
+  pointer-events: none;
+}
+@keyframes eclat-carte { from { opacity: 0.9; transform: scale(0.4); } to { opacity: 0; transform: scale(2.1); } }
+@keyframes defile { to { transform: translateX(-50%); } }
+.defile { animation: defile 40s linear infinite; }
+details.faq summary::-webkit-details-marker { display: none; }
+details.faq[open] .faq-signe { transform: rotate(45deg); }
